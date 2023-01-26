@@ -13,7 +13,7 @@ public class Cannon : MonoBehaviour
 
     [Header("Ammo")]
     [SerializeField] private AmmoType type;
-    [SerializeField] private short maxAmmo;
+    [SerializeField] private int maxAmmo;
     [SerializeField] private float reloadSpeed;
     [SerializeField] private float reloadDelay;
     [SerializeField] private float overheatTime;
@@ -23,20 +23,19 @@ public class Cannon : MonoBehaviour
     [Header("References")]
     [SerializeField] private Transform gunBarrel;
 
-    private float currentReloadDelay;
-    private float currentOverheatTime;
-    private float currentOverheatDelay;
-    private short currentAmmo;
-    private bool canShoot;
-    private bool isShooting;
-    private bool shouldShoot;
-    private bool overheated;
+    [SerializeField] private float currentReloadDelay;
+    [SerializeField] private float currentOverheatTime;
+    [SerializeField] private float currentOverheatDelay;
+    [SerializeField] private int currentAmmo;
+    [SerializeField] private bool canShoot;
+    [SerializeField] private bool isShooting;
+    [SerializeField] private bool shouldShoot;
+    [SerializeField] private bool overheated;
     private enum AmmoType
     {
         Laser,
         Ballistic,
-        HighExplosive,
-        Distortion
+        HighExplosive
     }
 
     private void Start()
@@ -65,6 +64,9 @@ public class Cannon : MonoBehaviour
             return;
         }
         if (overheated) return;
+        if (currentAmmo <= 0) return; // need ammo to reload
+        if (!canShoot) return;
+        Debug.Log("shot");
 
         isShooting = true;
         currentReloadDelay = 0f; // reset the reload timer if shooting
@@ -72,6 +74,7 @@ public class Cannon : MonoBehaviour
         RaycastHit hit;
         if (Physics.Raycast(gunBarrel.position, gunBarrel.forward, out hit, range, objectMask))
         {
+            Debug.Log(hit.collider.gameObject.name);
             ShipModule m = hit.collider.gameObject.GetComponent<ShipModule>();
             if (m != null) // the hit object is a spaceship
                 m.GetComponentInParent<ShipCombat>().Damage(m, damage);
@@ -88,29 +91,31 @@ public class Cannon : MonoBehaviour
         else if (!isShooting && !overheated && currentOverheatTime > 0) currentOverheatTime -= Time.deltaTime * coolingSpeed;
 
         // cannon is overheated
-        if (currentOverheatTime >= overheatTime) overheated = true;
+        if (currentOverheatTime > overheatTime) overheated = true;
         if (overheated) currentOverheatDelay += Time.deltaTime;
 
         // no longer overheated
-        if (currentOverheatDelay == overheatDelay)
+        if (currentOverheatDelay >= overheatDelay)
         {
             overheated = false;
             currentOverheatDelay = 0f;
+            currentOverheatTime = overheatTime;
         }
     }
 
     private void Reload()
     {
         // Ballistic and High Explosive guns don't reload
-        if (type != AmmoType.Laser && type != AmmoType.Distortion) return;
+        if (type != AmmoType.Laser) return;
         if (overheated) return; // can't reload while overheated
 
-        if (!isShooting) currentReloadDelay += Time.deltaTime;
+        if (!isShooting && currentReloadDelay < reloadDelay) currentReloadDelay += Time.deltaTime;
+        else if (isShooting) return;
 
         // can reload
         if (currentReloadDelay >= reloadDelay)
         {
-            short ammo = (short)Mathf.RoundToInt(Mathf.Lerp(currentAmmo, maxAmmo, reloadSpeed));
+            int ammo = Mathf.RoundToInt(Mathf.Lerp(currentAmmo, maxAmmo, reloadSpeed * Time.deltaTime));
             currentAmmo = ammo;
         }
     }
