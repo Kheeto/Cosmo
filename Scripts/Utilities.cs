@@ -38,7 +38,7 @@ public static class Utilities
         Vector3 acceleration = (currentVelocity - lastVelocity) / Time.fixedDeltaTime;
         lastVelocity = currentVelocity;
 
-        float Gforce = acceleration.magnitude / Physics.gravity.magnitude;
+        float Gforce = acceleration.normalized.magnitude / Physics.gravity.magnitude;
         return Gforce;
     }
 }
