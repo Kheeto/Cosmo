@@ -34,12 +34,12 @@ public class CameraFollow : MonoBehaviour
 	{
 		Vector3 _lookDirection = objectToLookAt.position - transform.position;
 		Quaternion _rot = Quaternion.LookRotation(_lookDirection, Vector3.up);
-		transform.rotation = Quaternion.Lerp(transform.rotation, _rot, lookSpeed * Time.deltaTime);
+		transform.rotation = Quaternion.Slerp(transform.rotation, _rot, lookSpeed * Time.fixedDeltaTime);
 	}
 
 	private void MoveToTarget()
 	{
 		Vector3 _targetPos = Povs[index].position;
-		transform.position = Vector3.Lerp(transform.position, _targetPos, followSpeed * Time.deltaTime);
+		transform.position = Vector3.Lerp(transform.position, _targetPos, followSpeed * Time.fixedDeltaTime);
 	}
 }
