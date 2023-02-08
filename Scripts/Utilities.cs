@@ -36,7 +36,6 @@ public static class Utilities
     {
         Vector3 currentVelocity = rb.velocity;
         Vector3 acceleration = (currentVelocity - lastVelocity) / Time.fixedDeltaTime;
-        lastVelocity = currentVelocity;
 
         float Gforce = acceleration.normalized.magnitude / Physics.gravity.magnitude;
         return Gforce;
