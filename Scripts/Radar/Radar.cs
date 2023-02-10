@@ -212,6 +212,8 @@ public class Radar : MonoBehaviour
             }
         }
 
+        List<RadarInfoUI> toRemove = new List<RadarInfoUI>();
+
         // Makes sure info ui objects of radar pings that don't exist anymore get destroyed
         foreach (RadarInfoUI info in infoList)
         {
@@ -223,10 +225,14 @@ public class Radar : MonoBehaviour
             }
 
             if (!found)
-            {
-                infoList.Remove(info);
-                Destroy(info.gameObject);
-            }
+                toRemove.Add(info);
+        }
+
+        // Deletes those info ui objects
+        foreach (RadarInfoUI info in toRemove)
+        {
+            infoList.Remove(info);
+            Destroy(info.gameObject);
         }
     }
 
