@@ -33,7 +33,7 @@ public class Radar : MonoBehaviour
 
     [SerializeField] private List<Collider> objectList;
     [SerializeField] private List<RadarPing> pingList;
-    private List<RadarInfoUI> infoList;
+    [SerializeField] private List<RadarInfoUI> infoList;
 
     [Header("Keybinding")]
     [SerializeField] private KeyCode radarLockKey = KeyCode.R;
@@ -198,13 +198,13 @@ public class Radar : MonoBehaviour
             bool found = false;
 
             foreach (RadarInfoUI info in infoList)
-                if (ping.GetOwner().gameObject == info.GetObject()) found = true;
+                if (ping == info.GetPing()) found = true;
 
             if (!found)
             {
                 RadarInfoUI newInfoObject = Instantiate(radarInfoElement).gameObject.GetComponent<RadarInfoUI>();
                 newInfoObject.transform.SetParent(radarInfoHolder);
-                newInfoObject.SetObject(ping.GetOwner().gameObject);
+                newInfoObject.SetPing(ping);
 
                 infoList.Add(newInfoObject);
             }
@@ -215,10 +215,16 @@ public class Radar : MonoBehaviour
         // Makes sure info ui objects of radar pings that don't exist anymore get destroyed
         foreach (RadarInfoUI info in infoList)
         {
+            if (!info)
+            {
+                toRemove.Add(info);
+                continue;
+            }
+
             bool found = false;
 
             foreach (RadarPing ping in pingList)
-                if (ping.GetOwner().gameObject == info.GetObject()) found = true;
+                if (ping == info.GetPing()) found = true;
 
             if (!found)
                 toRemove.Add(info);
@@ -227,7 +233,7 @@ public class Radar : MonoBehaviour
         foreach (RadarInfoUI info in toRemove)
         {
             infoList.Remove(info);
-            Destroy(info.gameObject);
+            if (info.gameObject) Destroy(info.gameObject);
         }
     }
 
