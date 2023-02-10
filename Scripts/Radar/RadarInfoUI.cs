@@ -9,6 +9,9 @@ public class RadarInfoUI : MonoBehaviour
 
     private void Update()
     {
+        if (radarObject == null)
+            Destroy(gameObject);
+
         Vector3 targPos = radarObject.transform.position;
         Vector3 camForward = Camera.main.transform.forward;
         Vector3 camPos = Camera.main.transform.position + camForward;
