@@ -1,18 +1,29 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class RadarInfoUI : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private GameObject radarObject;
+    [SerializeField] private RadarPing radarPing;
+    [SerializeField] private TMP_Text radarText;
 
     private void Update()
     {
-        if (radarObject == null)
+        if (!radarPing || !radarPing.GetOwner())
             Destroy(gameObject);
 
-        Vector3 targPos = radarObject.transform.position;
+        UpdatePosition();
+        UpdateUI();
+    }
+
+    private void UpdatePosition()
+    {
+        if (!radarPing || !radarPing.GetOwner())
+            return;
+
+        Vector3 targPos = radarPing.GetOwner().transform.position;
         Vector3 camForward = Camera.main.transform.forward;
         Vector3 camPos = Camera.main.transform.position + camForward;
 
@@ -25,7 +36,18 @@ public class RadarInfoUI : MonoBehaviour
         transform.position = RectTransformUtility.WorldToScreenPoint(Camera.main, targPos);
     }
 
-    public GameObject GetObject() { return radarObject; }
+    private void UpdateUI()
+    {
+        if (!radarPing || !radarPing.GetOwner())
+            return;
 
-    public void SetObject(GameObject obj) { radarObject = obj; }
+        float kmDistance = Vector3.Distance(Camera.main.transform.position,
+            radarPing.GetOwner().transform.position) / 1000f;
+
+        radarText.text = radarPing.GetOwner().transform.parent.name + "\n" + kmDistance.ToString("0.00") + "km";
+    }
+
+    public RadarPing GetPing() { return radarPing; }
+
+    public void SetPing(RadarPing rp) { radarPing = rp; }
 }
