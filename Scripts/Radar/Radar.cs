@@ -198,9 +198,7 @@ public class Radar : MonoBehaviour
             bool found = false;
 
             foreach (RadarInfoUI info in infoList)
-            {
-                if (ping.GetOwner() == info.GetObject()) found = true;
-            }
+                if (ping.GetOwner().gameObject == info.GetObject()) found = true;
 
             if (!found)
             {
@@ -220,15 +218,12 @@ public class Radar : MonoBehaviour
             bool found = false;
 
             foreach (RadarPing ping in pingList)
-            {
-                if (ping.GetOwner() == info.GetObject()) found = true;
-            }
+                if (ping.GetOwner().gameObject == info.GetObject()) found = true;
 
             if (!found)
                 toRemove.Add(info);
         }
 
-        // Deletes those info ui objects
         foreach (RadarInfoUI info in toRemove)
         {
             infoList.Remove(info);
