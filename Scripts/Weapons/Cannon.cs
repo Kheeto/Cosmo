@@ -22,15 +22,17 @@ public class Cannon : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private Transform gunBarrel;
+    [SerializeField] private GameObject muzzleFlash;
 
-    [SerializeField] private float currentReloadDelay;
-    [SerializeField] private float currentOverheatTime;
-    [SerializeField] private float currentOverheatDelay;
-    [SerializeField] private int currentAmmo;
-    [SerializeField] private bool canShoot;
-    [SerializeField] private bool isShooting;
-    [SerializeField] private bool shouldShoot;
-    [SerializeField] private bool overheated;
+    private float currentReloadDelay;
+    private float currentOverheatTime;
+    private float currentOverheatDelay;
+    private int currentAmmo;
+    private bool canShoot;
+    private bool isShooting;
+    private bool shouldShoot;
+    private bool overheated;
+
     private enum AmmoType
     {
         Laser,
@@ -83,6 +85,8 @@ public class Cannon : MonoBehaviour
         currentAmmo--;
         canShoot = false;
         Invoke(nameof(ResetShooting), 1f / fireRate);
+
+        Instantiate(muzzleFlash, transform.position, transform.rotation);
     }
 
     private void Overheat()
