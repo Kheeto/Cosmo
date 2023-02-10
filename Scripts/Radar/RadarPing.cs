@@ -5,6 +5,7 @@ using UnityEngine;
 public class RadarPing : MonoBehaviour
 {
     [Header("References")]
+    [SerializeField] private Radar radar;
     [SerializeField] private Collider owner;
     [SerializeField] private bool enableTimer;
     [SerializeField] private float disappearTimer;
@@ -17,10 +18,12 @@ public class RadarPing : MonoBehaviour
         disappearTime += Time.deltaTime;
         if(disappearTime >= disappearTimer)
         {
+            radar.UpdateRadarInfoUI();
             Destroy(gameObject);
         }
     }
 
+    public void SetRadar(Radar r) { radar = r; }
     public void SetOwner(Collider owner) { this.owner = owner; }
     public Collider GetOwner() { return owner; }
     public void SetTimer(float timer) {
