@@ -57,7 +57,7 @@ public class Radar : MonoBehaviour
     {
         RotateRadar();
         HandleRadar();
-        HandleTargetLock(); // TODO finish this
+        HandleTargetLock();
     }
 
     private void RotateRadar()
@@ -170,12 +170,31 @@ public class Radar : MonoBehaviour
     {
         if (Input.GetKeyDown(radarLockKey))
         {
-            RaycastHit hit;
-            if (Physics.SphereCast(transform.position, lockOnRadius, transform.forward, out hit, radarRange, targetMask))
+            Rigidbody closest = null;
+            float closestAngle = 0f;
+
+            foreach (RadarPing ping in pingList)
             {
-                Rigidbody hrb = hit.collider.GetComponent<Rigidbody>();
-                if (hrb != null) lockedOn = hrb;
+                Rigidbody hrb = ping.GetOwner().GetComponentInParent<Rigidbody>();
+                if (hrb == null) return;
+
+                if (closest = null)
+                {
+                    closest = hrb;
+                    closestAngle = Mathf.Abs(Vector3.Angle(transform.forward, ping.GetOwner().transform.position));
+                }
+                else
+                {
+                    float angle = Mathf.Abs(Vector3.Angle(transform.forward, ping.GetOwner().transform.position));
+                    if (angle < closestAngle)
+                    {
+                        closest = hrb;
+                        closestAngle = angle;
+                    }
+                }
             }
+
+            if (closest != null) lockedOn = closest;
         }
     }
 
