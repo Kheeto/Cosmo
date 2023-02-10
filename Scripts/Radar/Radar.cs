@@ -23,11 +23,17 @@ public class Radar : MonoBehaviour
     [Header("References")]
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Transform radarOrientation;
+
+    [Header("Radar UI")]
+    [SerializeField] private GameObject pingPrefab;
     [SerializeField] private GameObject radarUI;
     [SerializeField] private GameObject radarSweep;
-    [SerializeField] private GameObject pingPrefab;
+    [SerializeField] private Transform radarInfoHolder;
+    [SerializeField] private RadarInfoUI radarInfoElement;
+
     [SerializeField] private List<Collider> objectList;
     [SerializeField] private List<RadarPing> pingList;
+    private List<RadarInfoUI> infoList;
 
     [Header("Keybinding")]
     [SerializeField] private KeyCode radarLockKey = KeyCode.R;
@@ -44,6 +50,7 @@ public class Radar : MonoBehaviour
     {
         objectList = new List<Collider>();
         pingList = new List<RadarPing>();
+        infoList = new List<RadarInfoUI>();
     }
 
     private void Update()
@@ -110,6 +117,9 @@ public class Radar : MonoBehaviour
                 }
 
                 rp.SetOwner(hit.collider);
+                rp.SetRadar(this);
+
+                UpdateRadarInfoUI();
             }
             else
             {
@@ -152,6 +162,8 @@ public class Radar : MonoBehaviour
                 if (c != null) objectList.Remove(c);
             }
         }
+
+        UpdateRadarInfoUI();
     }
 
     private void HandleTargetLock()
@@ -176,6 +188,46 @@ public class Radar : MonoBehaviour
     public List<RadarPing> GetRadarPings()
     {
         return pingList;
+    }
+
+    public void UpdateRadarInfoUI()
+    {
+        // Makes sure every radar ping has an info ui object
+        foreach (RadarPing ping in pingList)
+        {
+            bool found = false;
+
+            foreach (RadarInfoUI info in infoList)
+            {
+                if (ping.GetOwner() == info.GetObject()) found = true;
+            }
+
+            if (!found)
+            {
+                RadarInfoUI newInfoObject = Instantiate(radarInfoElement).gameObject.GetComponent<RadarInfoUI>();
+                newInfoObject.transform.SetParent(radarInfoHolder);
+                newInfoObject.SetObject(ping.GetOwner().gameObject);
+
+                infoList.Add(newInfoObject);
+            }
+        }
+
+        // Makes sure info ui objects of radar pings that don't exist anymore get destroyed
+        foreach (RadarInfoUI info in infoList)
+        {
+            bool found = false;
+
+            foreach (RadarPing ping in pingList)
+            {
+                if (ping.GetOwner() == info.GetObject()) found = true;
+            }
+
+            if (!found)
+            {
+                infoList.Remove(info);
+                Destroy(info.gameObject);
+            }
+        }
     }
 
     public Rigidbody GetTarget() { return lockedOn; }
