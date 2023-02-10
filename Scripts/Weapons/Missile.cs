@@ -45,7 +45,7 @@ public class Missile : MonoBehaviour
     private Vector3 prediction;
     private float leadTimePercentage;
     private Vector3 lastVelocity;
-    private float currentGForce;
+    public float currentGForce;
 
     private void Start()
     {
@@ -78,6 +78,8 @@ public class Missile : MonoBehaviour
         if(engineOn) rb.AddForce(transform.forward * thrust);
 
         currentGForce = Utilities.CalculateGForce(rb, lastVelocity);
+
+        lastVelocity = rb.velocity;
     }
 
     private void PredictMovement(float leadTimePercentage)
@@ -99,6 +101,8 @@ public class Missile : MonoBehaviour
 
     private void RotateMissile()
     {
+        if (!engineOn) return;
+
         Vector3 heading = prediction - transform.position;
         Quaternion rotation = Quaternion.LookRotation(heading);
 
@@ -180,6 +184,7 @@ public class Missile : MonoBehaviour
     public void SetTarget(Rigidbody rb) { target = rb; }
 
     public void Launch() {
+        rb.isKinematic = false;
         engineOn = true;
         if (particleEffects)
             particleEffects.SetActive(true);
