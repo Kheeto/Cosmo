@@ -8,11 +8,7 @@ public class EnemyController : MonoBehaviour
     [Range(0, 100)]
     [SerializeField] private float throttle = 0f;
     [SerializeField] private float thrust = 500f;
-    [SerializeField] private float thrustAcceleration = 5f;
-    [SerializeField] private float rollSpeed = 90f;
-    [SerializeField] private float pitchSpeed = 90f;
-    [SerializeField] private float yawSpeed = 60f;
-    [SerializeField] private float acceleration = 4.5f;
+    [SerializeField] private float turnSpeed = 90f;
     private float currentThrust = 0f;
 
     [Header("Booster")]
@@ -43,14 +39,18 @@ public class EnemyController : MonoBehaviour
     private Vector3 movementDirection;
     private Vector3 currentSpeed;
     private Rigidbody rb;
+    private GameObject player;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
+        player = FindObjectOfType<ShipController>().gameObject;
     }
 
     private void Update()
     {
+        RotateShip();
+
         HandleThrust();
         HandleBooster();
     }
@@ -62,28 +62,23 @@ public class EnemyController : MonoBehaviour
 
     #region Movement
 
+    private void RotateShip()
+    {
+        Vector3 playerDirection = player.transform.position - transform.position;
+        Quaternion rotation = Quaternion.LookRotation(playerDirection);
+
+        rb.MoveRotation(Quaternion.RotateTowards(rb.rotation, rotation, turnSpeed * Time.deltaTime));
+    }
+
     private void HandleThrust()
     {
         float targetThrust = thrust * (throttle / 100);
         if (usingBooster) targetThrust += boosterThrust;
-        currentThrust = Mathf.Lerp(currentThrust, targetThrust, thrustAcceleration * Time.deltaTime);
+        currentThrust = targetThrust;
     }
 
     private void HandleMovement()
     {
-        currentSpeed.x = Mathf.Lerp(currentSpeed.x,
-            movementDirection.x * pitchSpeed,
-            acceleration * Time.fixedDeltaTime);
-        currentSpeed.y = Mathf.Lerp(currentSpeed.y,
-            -movementDirection.z * yawSpeed,
-            acceleration * Time.fixedDeltaTime);
-        currentSpeed.z = Mathf.Lerp(currentSpeed.z,
-            -movementDirection.y * rollSpeed,
-            acceleration * Time.fixedDeltaTime);
-
-        // applies thrust rotation
-        rb.AddRelativeTorque(currentSpeed.x * Time.fixedDeltaTime,
-                currentSpeed.y * Time.fixedDeltaTime, currentSpeed.z * Time.fixedDeltaTime);
         rb.AddForce(transform.forward * currentThrust, ForceMode.Force);
     }
 
