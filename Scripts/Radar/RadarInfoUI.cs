@@ -15,6 +15,8 @@ public class RadarInfoUI : MonoBehaviour
     [SerializeField] private TMP_Text radarText;
     [SerializeField] private RawImage radarIcon;
 
+    private bool isLockedOn = false;
+
     private void Update()
     {
         if (!radarPing || !radarPing.GetOwner())
@@ -22,6 +24,7 @@ public class RadarInfoUI : MonoBehaviour
 
         UpdatePosition();
         UpdateUI();
+        // TODO add aim prediction
     }
 
     private void UpdatePosition()
@@ -57,11 +60,13 @@ public class RadarInfoUI : MonoBehaviour
     {
         if (state)
         {
+            isLockedOn = true;
             radarIcon.color = lockColor;
             radarText.color = lockColor;
         }
         else
         {
+            isLockedOn = false;
             radarIcon.color = normalColor;
             radarText.color = normalColor;
         }
