@@ -195,6 +195,8 @@ public class Missile : MonoBehaviour
 
     public void SetTarget(Rigidbody rb) { target = rb; }
 
+    public Rigidbody GetTarget() { return target; }
+
     public void Launch() {
         rb.isKinematic = false;
         rb.AddForce(separationForce, ForceMode.Impulse);
