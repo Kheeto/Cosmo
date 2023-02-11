@@ -154,8 +154,7 @@ public class Radar : MonoBehaviour
             if (p == null) continue;
 
             Collider c = p.GetOwner();
-            if (Vector3.Distance(radarOrientation.position, c.transform.position) > radarRange
-                || c == null)
+            if (c == null || Vector3.Distance(radarOrientation.position, c.transform.position) > radarRange)
             {
                 pingList.Remove(p);
                 Destroy(p.gameObject);
