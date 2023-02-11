@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Cannon : MonoBehaviour
 {
@@ -23,6 +24,11 @@ public class Cannon : MonoBehaviour
     [Header("References")]
     [SerializeField] private Transform gunBarrel;
     [SerializeField] private GameObject muzzleFlash;
+
+    // UI
+    [SerializeField] private RawImage ammoBarUI;
+    private float ammoBarHeight;
+
 
     private float currentReloadDelay;
     private float currentOverheatTime;
@@ -50,6 +56,8 @@ public class Cannon : MonoBehaviour
         isShooting = false;
         shouldShoot = false;
         overheated = false;
+
+        ammoBarHeight = ammoBarUI.rectTransform.rect.height;
     }
 
     private void Update()
@@ -87,6 +95,8 @@ public class Cannon : MonoBehaviour
         Invoke(nameof(ResetShooting), 1f / fireRate);
 
         Instantiate(muzzleFlash, transform.position, transform.rotation);
+
+        UpdateUI();
     }
 
     private void Overheat()
@@ -107,6 +117,7 @@ public class Cannon : MonoBehaviour
         }
     }
 
+    private float lerp;
     private void Reload()
     {
         // Ballistic and High Explosive guns don't reload
@@ -119,9 +130,15 @@ public class Cannon : MonoBehaviour
         // can reload
         if (currentReloadDelay >= reloadDelay)
         {
-            int ammo = Mathf.RoundToInt(Mathf.Lerp(currentAmmo, maxAmmo, reloadSpeed * Time.deltaTime));
+            //int ammo = Mathf.RoundToInt(Mathf.Lerp(currentAmmo, maxAmmo, reloadSpeed * Time.deltaTime));
+            lerp += Time.deltaTime / reloadSpeed;
+            int ammo = (int)Mathf.Lerp(currentAmmo, maxAmmo, lerp);
             currentAmmo = ammo;
+
+            UpdateUI();
         }
+        else
+            lerp = 0f;
     }
 
     private void ResetShooting()
@@ -132,5 +149,15 @@ public class Cannon : MonoBehaviour
     public void SetShooting(bool value)
     {
         shouldShoot = value;
+    }
+
+    public int GetCurrentAmmo() { return currentAmmo; }
+
+    private void UpdateUI()
+    {
+        ammoBarUI.rectTransform.sizeDelta = new Vector2(ammoBarUI.rectTransform.rect.width,
+            ammoBarHeight / maxAmmo * currentAmmo);
+
+        
     }
 }
