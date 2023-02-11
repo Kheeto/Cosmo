@@ -1,7 +1,8 @@
 # Unity-SCS
 Space Combat game prototype in unity 2021.3.10f1<br>
-Includes working cannons, IR/ARH/SARH guided missiles, radar system, damage modules and spacecraft movement
-Keep in mind this is an unfinished prototype, i'm currently working on new features including controlled launches.
+
+Includes working cannons, radar system, IR/radar guided homing missiles, countermeasures, damage modules, spacecraft movement and simulated gravity and orbits<br>
+Keep in mind this is an prototype i'm still working on, i'm working on new features and it may have bugs
 
 ![Example Spacecraft Image](https://github.com/Kheeto/Unity-SCS/blob/main/.github/space%20game%20test.PNG)
 ![Example Space Controller Image](https://github.com/Kheeto/Unity-SCS/blob/main/.github/ship%20inspector.PNG)
