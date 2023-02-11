@@ -152,6 +152,7 @@ public class Missile : MonoBehaviour
         radarTargetFound = false;
         foreach (RadarPing rp in radarTargets)
         {
+            if (rp.GetOwner() == null) continue;
             if (rp.GetOwner().gameObject.GetComponentInParent<Rigidbody>() == target) radarTargetFound = true;
         }
     }
