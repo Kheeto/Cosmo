@@ -42,11 +42,12 @@ public class Missile : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private Rigidbody target;
-    private float targetLostTime;
     [SerializeField] private Rigidbody rb;
     [SerializeField] private GameObject explosionPrefab;
     [SerializeField] private GameObject particleEffects;
+    [SerializeField] private AmmoText ammoText;
 
+    private float targetLostTime;
     private Vector3 prediction;
     private float leadTimePercentage;
     private Vector3 lastVelocity;
@@ -202,6 +203,8 @@ public class Missile : MonoBehaviour
         engineOn = true;
         if (particleEffects)
             particleEffects.SetActive(true);
+
+        ammoText.UpdateAmmoText();
     }
 
     public Guidance GetGuidance() { return mode; }
