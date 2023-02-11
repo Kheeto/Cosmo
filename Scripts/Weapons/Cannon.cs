@@ -27,6 +27,7 @@ public class Cannon : MonoBehaviour
 
     // UI
     [SerializeField] private RawImage ammoBarUI;
+    [SerializeField] private AmmoText ammoText;
     private float ammoBarHeight;
 
 
@@ -158,6 +159,6 @@ public class Cannon : MonoBehaviour
         ammoBarUI.rectTransform.sizeDelta = new Vector2(ammoBarUI.rectTransform.rect.width,
             ammoBarHeight / maxAmmo * currentAmmo);
 
-        
+        ammoText.UpdateAmmoText();
     }
 }
