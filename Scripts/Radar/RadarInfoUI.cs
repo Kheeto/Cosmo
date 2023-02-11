@@ -1,13 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class RadarInfoUI : MonoBehaviour
 {
+    [Header("Radar Lock")]
+    [SerializeField] private Color normalColor;
+    [SerializeField] private Color lockColor;
+
     [Header("References")]
     [SerializeField] private RadarPing radarPing;
     [SerializeField] private TMP_Text radarText;
+    [SerializeField] private RawImage radarIcon;
 
     private void Update()
     {
@@ -45,6 +51,20 @@ public class RadarInfoUI : MonoBehaviour
             radarPing.GetOwner().transform.position) / 1000f;
 
         radarText.text = radarPing.GetOwner().transform.parent.name + "\n" + kmDistance.ToString("0.00") + "km";
+    }
+
+    public void UpdateLockState(bool state)
+    {
+        if (state)
+        {
+            radarIcon.color = lockColor;
+            radarText.color = lockColor;
+        }
+        else
+        {
+            radarIcon.color = normalColor;
+            radarText.color = normalColor;
+        }
     }
 
     public RadarPing GetPing() { return radarPing; }
