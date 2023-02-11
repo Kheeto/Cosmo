@@ -25,9 +25,11 @@ public class Cannon : MonoBehaviour
     [SerializeField] private Transform gunBarrel;
     [SerializeField] private GameObject muzzleFlash;
 
-    // UI
+    [Header("UI")]
     [SerializeField] private RawImage ammoBarUI;
     [SerializeField] private AmmoText ammoText;
+    [SerializeField] private Color normalColor;
+    [SerializeField] private Color overheatColor;
     private float ammoBarHeight;
 
 
@@ -106,7 +108,11 @@ public class Cannon : MonoBehaviour
         else if (!isShooting && !overheated && currentOverheatTime > 0) currentOverheatTime -= Time.deltaTime * coolingSpeed;
 
         // cannon is overheated
-        if (currentOverheatTime > overheatTime) overheated = true;
+        if (currentOverheatTime > overheatTime)
+        {
+            overheated = true;
+            UpdateUI();
+        }
         if (overheated) currentOverheatDelay += Time.deltaTime;
 
         // no longer overheated
@@ -115,6 +121,7 @@ public class Cannon : MonoBehaviour
             overheated = false;
             currentOverheatDelay = 0f;
             currentOverheatTime = overheatTime;
+            UpdateUI();
         }
     }
 
@@ -156,8 +163,17 @@ public class Cannon : MonoBehaviour
 
     private void UpdateUI()
     {
-        ammoBarUI.rectTransform.sizeDelta = new Vector2(ammoBarUI.rectTransform.rect.width,
-            ammoBarHeight / maxAmmo * currentAmmo);
+        if (overheated)
+        {
+            ammoBarUI.rectTransform.sizeDelta = new Vector2(ammoBarUI.rectTransform.rect.width, ammoBarHeight);
+            ammoBarUI.color = overheatColor;
+        }
+        else
+        {
+            ammoBarUI.rectTransform.sizeDelta = new Vector2(ammoBarUI.rectTransform.rect.width,
+                ammoBarHeight / maxAmmo * currentAmmo);
+            ammoBarUI.color = normalColor;
+        }
 
         ammoText.UpdateAmmoText();
     }
