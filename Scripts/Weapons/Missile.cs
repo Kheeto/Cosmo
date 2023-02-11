@@ -19,6 +19,11 @@ public class Missile : MonoBehaviour
     [SerializeField] private float explosionRadius = 5f;
     [SerializeField] private float range;
 
+    [Header("Missile Launch")]
+    [SerializeField] private Vector3 separationForce;
+    [SerializeField] private float timeBeforeTurning = 1f;
+    private float timeBeforeTurningTimer = 0f;
+
     [Header("IR Guidance")]
     [SerializeField] private LayerMask IRObjectMask;
     [SerializeField] private LayerMask IRTargets;
@@ -47,6 +52,8 @@ public class Missile : MonoBehaviour
     private Vector3 lastVelocity;
     public float currentGForce;
 
+    public bool wasLaunched = false;
+
     private void Start()
     {
         if (rb == null) rb = GetComponent<Rigidbody>();
@@ -71,6 +78,9 @@ public class Missile : MonoBehaviour
 
         CheckForIRTarget();
         CheckForRadarTarget();
+
+        if (engineOn && timeBeforeTurningTimer < timeBeforeTurning)
+            timeBeforeTurningTimer += Time.deltaTime;
     }
 
     private void FixedUpdate()
@@ -102,6 +112,7 @@ public class Missile : MonoBehaviour
     private void RotateMissile()
     {
         if (!engineOn) return;
+        if (timeBeforeTurningTimer < timeBeforeTurning) return;
 
         Vector3 heading = prediction - transform.position;
         Quaternion rotation = Quaternion.LookRotation(heading);
@@ -185,6 +196,9 @@ public class Missile : MonoBehaviour
 
     public void Launch() {
         rb.isKinematic = false;
+        rb.AddForce(separationForce, ForceMode.Impulse);
+
+        wasLaunched = true;
         engineOn = true;
         if (particleEffects)
             particleEffects.SetActive(true);
