@@ -65,7 +65,7 @@ public class Radar : MonoBehaviour
         previousRotation = radarOrientation.eulerAngles.y / 360f;
 
         radarOrientation.Rotate(0f, 6 * radarRotateSpeed * Time.deltaTime, 0f);
-        if (enableRadarUI) radarSweep.transform.Rotate(Vector3.forward * 6 * radarRotateSpeed * Time.deltaTime);
+        if (enableRadarUI && radarSweep != null) radarSweep.transform.Rotate(Vector3.forward * 6 * radarRotateSpeed * Time.deltaTime);
 
         currentRotation = radarOrientation.eulerAngles.y / 360f;
 
