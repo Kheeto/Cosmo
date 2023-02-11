@@ -11,6 +11,11 @@ public class AmmoText : MonoBehaviour
     [Header("References")]
     [SerializeField] private TMP_Text ammoText;
 
+    private void Start()
+    {
+        UpdateAmmoText();
+    }
+
     public void UpdateAmmoText()
     {
         int cannonAmmo = 0;
