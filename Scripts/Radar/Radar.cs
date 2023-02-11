@@ -170,26 +170,19 @@ public class Radar : MonoBehaviour
         if (Input.GetKeyDown(radarLockKey))
         {
             Rigidbody closest = null;
-            float closestAngle = 0f;
+            float minDistance = Mathf.Infinity;
 
             foreach (RadarPing ping in pingList)
             {
                 Rigidbody hrb = ping.GetOwner().GetComponentInParent<Rigidbody>();
                 if (hrb == null) return;
 
-                if (closest = null)
+                float dist = Vector3.Distance(transform.position, hrb.position);
+
+                if (dist < minDistance)
                 {
                     closest = hrb;
-                    closestAngle = Mathf.Abs(Vector3.Angle(transform.forward, ping.GetOwner().transform.position));
-                }
-                else
-                {
-                    float angle = Mathf.Abs(Vector3.Angle(transform.forward, ping.GetOwner().transform.position));
-                    if (angle < closestAngle)
-                    {
-                        closest = hrb;
-                        closestAngle = angle;
-                    }
+                    minDistance = dist;
                 }
             }
 
@@ -231,6 +224,7 @@ public class Radar : MonoBehaviour
         List<RadarInfoUI> toRemove = new List<RadarInfoUI>();
 
         // Makes sure info ui objects of radar pings that don't exist anymore get destroyed
+        // also updates them if they are locked on or not
         foreach (RadarInfoUI info in infoList)
         {
             if (!info)
@@ -242,7 +236,14 @@ public class Radar : MonoBehaviour
             bool found = false;
 
             foreach (RadarPing ping in pingList)
-                if (ping == info.GetPing()) found = true;
+                if (ping == info.GetPing())
+                {
+                    found = true;
+                    if (ping.GetOwner().GetComponentInParent<Rigidbody>() == lockedOn)
+                        info.UpdateLockState(true);
+                    else
+                        info.UpdateLockState(false);
+                }
 
             if (!found)
                 toRemove.Add(info);
