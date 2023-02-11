@@ -46,6 +46,7 @@ public class Missile : MonoBehaviour
     [SerializeField] private GameObject explosionPrefab;
     [SerializeField] private GameObject particleEffects;
     [SerializeField] private AmmoText ammoText;
+    [SerializeField] private MissileWarning missileWarning;
 
     private float targetLostTime;
     private Vector3 prediction;
@@ -206,7 +207,8 @@ public class Missile : MonoBehaviour
         if (particleEffects)
             particleEffects.SetActive(true);
 
-        ammoText.UpdateAmmoText();
+        if (ammoText != null) ammoText.UpdateAmmoText();
+        if (missileWarning != null) missileWarning.AddMissile(this);
     }
 
     public Guidance GetGuidance() { return mode; }
