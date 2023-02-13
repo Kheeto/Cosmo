@@ -9,6 +9,7 @@ public class MenuManager : MonoBehaviour
     [SerializeField] private GameObject mainMenu;
     [SerializeField] private GameObject optionsMenu;
     [SerializeField] private GameObject levelsMenu;
+    [SerializeField] private Animator animator;
 
     private void Start()
     {
@@ -24,16 +25,22 @@ public class MenuManager : MonoBehaviour
 
     public void OpenOptionsMenu()
     {
-        mainMenu.SetActive(false);
-        optionsMenu.SetActive(true);
-        levelsMenu.SetActive(false);
+        animator.SetTrigger("MainToOptions");
     }
 
     public void OpenLevelsMenu()
     {
-        mainMenu.SetActive(false);
-        optionsMenu.SetActive(false);
-        levelsMenu.SetActive(true);
+        animator.SetTrigger("MainToLevels");
+    }
+
+    public void OptionsToMain()
+    {
+        animator.SetTrigger("OptionsToMain");
+    }
+
+    public void LevelsToMain()
+    {
+        animator.SetTrigger("LevelsToMain");
     }
 
     public void LoadLevel(int index)
