@@ -1,16 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum Guidance
-{
-    IR, // Infrared homing (heat seeking)
-    Radar, // Active or Semi-Active Radar Homing
-}
-
 public class Missile : MonoBehaviour
 {
     [Header("Missile Settings")]
-    [SerializeField] private Guidance mode;
     [SerializeField] private bool engineOn = false;
     [SerializeField] private float thrust = 350f;
     [SerializeField] private float turnRate = 250f;
@@ -23,13 +16,6 @@ public class Missile : MonoBehaviour
     [SerializeField] private Vector3 separationForce;
     [SerializeField] private float timeBeforeTurning = 1f;
     private float timeBeforeTurningTimer = 0f;
-
-    [Header("IR Guidance")]
-    [SerializeField] private LayerMask IRObjectMask;
-    [SerializeField] private LayerMask IRTargets;
-    [SerializeField] private float IRRange;
-    [SerializeField] private float IRRadius;
-    private bool irTargetFound;
 
     [Header("Radar Guidance")]
     [SerializeField] private Radar radar;
@@ -78,7 +64,6 @@ public class Missile : MonoBehaviour
         PredictMovement(leadTimePercentage);
         RotateMissile();
 
-        CheckForIRTarget();
         CheckForRadarTarget();
 
         if (engineOn && timeBeforeTurningTimer < timeBeforeTurning)
@@ -104,8 +89,7 @@ public class Missile : MonoBehaviour
         }
 
         // If target isn't visible, can't predict movement
-        if (mode == Guidance.Radar && !radarTargetFound) return;
-        if (mode == Guidance.IR && !irTargetFound) return;
+        if (!radarTargetFound) return;
 
         float predictionTime = Mathf.Lerp(0, maxPredictionTime, leadTimePercentage);
         prediction = target.position + target.velocity * predictionTime;
@@ -123,30 +107,8 @@ public class Missile : MonoBehaviour
             rb.MoveRotation(Quaternion.RotateTowards(rb.rotation, rotation, turnRate * Time.deltaTime));
     }
 
-    private void CheckForIRTarget()
-    {
-        if (mode != Guidance.IR) return;
-
-        irTargetFound = false;
-
-        RaycastHit hit;
-        if (Physics.SphereCast(transform.position, IRRadius, transform.forward, out hit, IRRange,
-            IRObjectMask, QueryTriggerInteraction.Collide))
-        {
-            Rigidbody rb = hit.collider.GetComponentInParent<Rigidbody>();
-            if (rb != null)
-            {
-                target = rb;
-                irTargetFound = true;
-            }
-            else target = null;
-        }
-    }
-
     private void CheckForRadarTarget()
     {
-        if (mode != Guidance.Radar) return;
-
         List<RadarPing> radarTargets = radar.GetRadarPings();
 
         radarTargetFound = false;
@@ -215,6 +177,4 @@ public class Missile : MonoBehaviour
         if (ammoText != null) ammoText.UpdateAmmoText();
         if (missileWarning != null) missileWarning.AddMissile(this);
     }
-
-    public Guidance GetGuidance() { return mode; }
 }
