@@ -61,7 +61,7 @@ public class Cannon : MonoBehaviour
         shouldShoot = false;
         overheated = false;
 
-        ammoBarHeight = ammoBarUI.rectTransform.rect.height;
+        if (enableCannonUI) ammoBarHeight = ammoBarUI.rectTransform.rect.height;
     }
 
     private void Update()
