@@ -172,7 +172,11 @@ public class Missile : MonoBehaviour
             if (m != null)
             {
                 float distance = Vector3.Distance(rb.position, c.gameObject.transform.position);
-                m.GetComponentInParent<ShipCombat>().Damage(m, damageCurve.Evaluate(distance));
+
+                if (m.GetComponentInParent<ShipCombat>())
+                    m.GetComponentInParent<ShipCombat>().Damage(m, damageCurve.Evaluate(distance));
+                else if (m.GetComponentInParent<EnemyController>())
+                    m.GetComponentInParent<EnemyController>().Damage(m, damageCurve.Evaluate(distance));
             }
         }
         
