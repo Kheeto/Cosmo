@@ -26,6 +26,7 @@ public class Cannon : MonoBehaviour
     [SerializeField] private GameObject muzzleFlash;
 
     [Header("UI")]
+    [SerializeField] private bool enableCannonUI;
     [SerializeField] private RawImage ammoBarUI;
     [SerializeField] private AmmoText ammoText;
     [SerializeField] private Color normalColor;
@@ -89,8 +90,12 @@ public class Cannon : MonoBehaviour
         {
             Debug.Log(hit.collider.gameObject.name);
             ShipModule m = hit.collider.gameObject.GetComponent<ShipModule>();
-            if (m != null) // the hit object is a spaceship
-                m.GetComponentInParent<ShipCombat>().Damage(m, damage);
+            if (m != null) { // the hit object is a spaceship
+                if (m.GetComponentInParent<ShipCombat>())
+                    m.GetComponentInParent<ShipCombat>().Damage(m, damage);
+                else if (m.GetComponentInParent<EnemyController>())
+                    m.GetComponentInParent<EnemyController>().Damage(m, damage);
+            }
         }
 
         currentAmmo--;
@@ -163,6 +168,8 @@ public class Cannon : MonoBehaviour
 
     private void UpdateUI()
     {
+        if (!enableCannonUI) return;
+
         if (overheated)
         {
             ammoBarUI.rectTransform.sizeDelta = new Vector2(ammoBarUI.rectTransform.rect.width, ammoBarHeight);
