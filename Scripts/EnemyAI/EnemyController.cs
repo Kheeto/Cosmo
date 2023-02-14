@@ -24,8 +24,11 @@ public class EnemyController : MonoBehaviour
     [Header("Combat")]
     [SerializeField] private Radar radar;
     [SerializeField] private List<ShipModule> modules = new List<ShipModule>();
-    [SerializeField] private List<Cannon> cannons = new List<Cannon>();
     [SerializeField] private List<Missile> missiles = new List<Missile>();
+    [SerializeField] private float missileMinDistance = 100f;
+    [SerializeField] private List<Cannon> cannons = new List<Cannon>();
+    [SerializeField] private float cannonMaxDistance = 500f;
+    [SerializeField] private LayerMask cannonMask;
     private Rigidbody lockedOn;
 
     [Header("Countermeasures")]
@@ -49,10 +52,14 @@ public class EnemyController : MonoBehaviour
 
     private void Update()
     {
+        // Movement
         RotateShip();
-
         HandleThrust();
         HandleBooster();
+
+        // Combat
+        LookForPlayer();
+        HandleWeapons();
     }
 
     private void FixedUpdate()
@@ -108,12 +115,26 @@ public class EnemyController : MonoBehaviour
 
     #region Combat
 
-    private void ShootCannons(bool state)
+    private bool playerVisible = false;
+    private void LookForPlayer()
     {
-        foreach (Cannon c in cannons)
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, transform.forward, out hit, Mathf.Infinity, cannonMask))
         {
-            c.SetShooting(state);
+            if (hit.collider.gameObject.CompareTag("Player")) playerVisible = true;
         }
+    }
+
+    private void HandleWeapons()
+    {
+        if (Vector3.Distance(player.transform.position, transform.position) < cannonMaxDistance)
+            foreach (Cannon c in cannons)
+            {
+                c.SetShooting(playerVisible);
+            }
+
+        if (Vector3.Distance(player.transform.position, transform.position) > missileMinDistance)
+            ShootMissile();
     }
 
     private void ShootMissile()
@@ -121,17 +142,7 @@ public class EnemyController : MonoBehaviour
         Missile nextMissile = missiles[0];
         if (nextMissile == null) return; // out of missiles
 
-        if (nextMissile.GetGuidance() == Guidance.IR)
-        {
-            if (lockedOn == null) return; // no target
-            else nextMissile.SetTarget(lockedOn);
-        }
-        else if (nextMissile.GetGuidance() == Guidance.Radar)
-        {
-            if (radar.GetTarget() == null) return; // no target
-            else nextMissile.SetTarget(radar.GetTarget());
-        }
-
+        nextMissile.SetTarget(player.GetComponent<Rigidbody>());
         nextMissile.Launch();
         missiles.Remove(nextMissile);
     }
