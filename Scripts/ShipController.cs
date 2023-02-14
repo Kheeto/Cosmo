@@ -6,11 +6,8 @@ using TMPro;
 
 public class ShipController : MonoBehaviour
 {
-    [Header("Settings")]
-    [SerializeField] private MovementMode movementMode = MovementMode.VTOL;
+    [Header("Flight Settings")]
     [SerializeField] private bool engineOn;
-
-    [Header("Conventional")]
     [Range(0, 100)]
     [SerializeField] private float throttle = 0f;
     [SerializeField] private float throttleSensivity = 10f;
@@ -32,17 +29,8 @@ public class ShipController : MonoBehaviour
     private bool usingBooster;
     private bool wasUsingBooster;
 
-    [Header("VTOL")]
-    [SerializeField] private float forwardSpeed = 200f;
-    [SerializeField] private float backwardSpeed = 60f;
-    [SerializeField] private float strafeSpeed = 110f;
-    [SerializeField] private float hoverSpeed = 110f;
-    [SerializeField] private float accelerationVTOL = 2.5f;
-    [SerializeField] private float rollSpeedVTOL = 45f;
-
     [Header("Look")]
-    [SerializeField] private float lookSpeedConventional = 360f;
-    [SerializeField] private float lookSpeedVTOL = 700f;
+    [SerializeField] private float lookSpeed = 360f;
 
     [Header("UI")]
     [SerializeField] private RawImage boosterBar;
@@ -53,24 +41,16 @@ public class ShipController : MonoBehaviour
     private float boosterBarHeight;
 
     [Header("Keybinding")]
-    [SerializeField] private KeyCode movementModeKey = KeyCode.H;
     [SerializeField] private KeyCode engineKey = KeyCode.I;
     [SerializeField] private KeyCode boosterKey = KeyCode.LeftShift;
 
     // Input & movement
-    private Vector3 currentSpeedConventional;
-    private Vector3 currentSpeedVTOL;
+    private Vector3 currentSpeed;
     private Vector3 movementInput;
     private float hoverInput;
     private Vector2 lookInput, screenCenter, mouseDistance;
 
     private Rigidbody rb;
-    private Vector3 lastVelocity;
-    private enum MovementMode
-    {
-        Conventional,
-        VTOL,
-    }
 
     private void Start()
     {
@@ -99,17 +79,11 @@ public class ShipController : MonoBehaviour
 
     private void HandleInput()
     {
-        if (Input.GetKeyDown(movementModeKey) && movementMode == MovementMode.Conventional)
-            movementMode = MovementMode.VTOL;
-        else if (Input.GetKeyDown(movementModeKey) && movementMode == MovementMode.VTOL)
-            movementMode = MovementMode.Conventional;
-
         // Movement input
-        float Vertical = Input.GetAxis("Vertical");
-        float Horizontal = Input.GetAxis("Horizontal");
-        float Diagonal = Input.GetAxis("Diagonal");
-        movementInput = new Vector3(Vertical, Horizontal, Diagonal);
-        hoverInput = Mathf.Lerp(hoverInput, Input.GetAxis("Hover"), accelerationVTOL * Time.fixedDeltaTime);
+        float Pitch = Input.GetAxis("Vertical");
+        float Roll = Input.GetAxis("Horizontal");
+        float Yaw = Input.GetAxis("Diagonal");
+        movementInput = new Vector3(Pitch, Roll, Yaw);
 
         // Look input
         lookInput.x = Input.mousePosition.x;
@@ -162,46 +136,24 @@ public class ShipController : MonoBehaviour
     {
         if (!engineOn) return;
 
-        if (movementMode == MovementMode.Conventional) {
-            // Conventional input only controls rotation, thrust is automatically added
+        Vector3 lookRotation = new Vector3(-mouseDistance.y * lookSpeed * Time.fixedDeltaTime,
+            mouseDistance.x * lookSpeed * Time.fixedDeltaTime, 0f);
+        // Keyboard rotation
+        currentSpeed.x = Mathf.Lerp(currentSpeed.x,
+            movementInput.x * pitchSpeed,
+            acceleration * Time.fixedDeltaTime);
+        currentSpeed.y = Mathf.Lerp(currentSpeed.y,
+            -movementInput.z * yawSpeed,
+            acceleration * Time.fixedDeltaTime);
+        currentSpeed.z = Mathf.Lerp(currentSpeed.z,
+            -movementInput.y * rollSpeed,
+            acceleration * Time.fixedDeltaTime);
 
-            Vector3 lookRotation = new Vector3(-mouseDistance.y * lookSpeedConventional * Time.fixedDeltaTime,
-                mouseDistance.x * lookSpeedConventional * Time.fixedDeltaTime, 0f);
-            // Keyboard rotation
-            currentSpeedConventional.x = Mathf.Lerp(currentSpeedConventional.x,
-                movementInput.x * pitchSpeed,
-                acceleration * Time.fixedDeltaTime);
-            currentSpeedConventional.y = Mathf.Lerp(currentSpeedConventional.y,
-                -movementInput.z * yawSpeed,
-                acceleration * Time.fixedDeltaTime);
-            currentSpeedConventional.z = Mathf.Lerp(currentSpeedConventional.z,
-                -movementInput.y * rollSpeed,
-                acceleration * Time.fixedDeltaTime);
-
-            // applies thrust and the bigger rotation value between the look input and movement input
-            if(lookRotation.magnitude > currentSpeedConventional.magnitude)
-            {
-                rb.AddRelativeTorque(lookRotation, ForceMode.Force);
-            } else
-                rb.AddRelativeTorque(currentSpeedConventional.x * Time.fixedDeltaTime,
-                    currentSpeedConventional.y * Time.fixedDeltaTime, currentSpeedConventional.z * Time.fixedDeltaTime);
-
-            rb.AddForce(transform.forward * currentThrust, ForceMode.Force);
-        }
-        else if (movementMode == MovementMode.VTOL)
-        {
-            // Look input controls rotation, keyboard inputs control movement
-            rb.AddRelativeTorque(-mouseDistance.y * lookSpeedVTOL * Time.fixedDeltaTime,
-                mouseDistance.x * lookSpeedVTOL * Time.fixedDeltaTime, movementInput.z * rollSpeedVTOL * Time.fixedDeltaTime);
-
-            currentSpeedVTOL.x = Mathf.Lerp(currentSpeedVTOL.x, movementInput.x * forwardSpeed, accelerationVTOL * Time.fixedDeltaTime);
-            currentSpeedVTOL.y = Mathf.Lerp(currentSpeedVTOL.y, hoverInput * hoverSpeed, accelerationVTOL * Time.fixedDeltaTime);
-            currentSpeedVTOL.z = Mathf.Lerp(currentSpeedVTOL.z, movementInput.y * strafeSpeed, accelerationVTOL * Time.fixedDeltaTime);
-
-            // applies movement and look rotation
-            rb.AddForce(transform.forward * currentSpeedVTOL.x, ForceMode.Force);
-            rb.AddForce(transform.up * currentSpeedVTOL.y + transform.right * currentSpeedVTOL.z, ForceMode.Force);
-        }
+        // applies thrust and the look rotation
+        rb.AddRelativeTorque(lookRotation, ForceMode.Force);
+        rb.AddRelativeTorque(currentSpeed.x * Time.fixedDeltaTime,
+                currentSpeed.y * Time.fixedDeltaTime, currentSpeed.z * Time.fixedDeltaTime);
+        rb.AddForce(transform.forward * currentThrust, ForceMode.Force);
     }
 
     private void HandleUI()
@@ -212,7 +164,7 @@ public class ShipController : MonoBehaviour
             boosterBarHeight * boosterTimer / boosterDuration);
 
         throttleText.text = Mathf.Round(throttle).ToString() + "%";
-        infoText.text = Mathf.Round(rb.velocity.magnitude * 3.6f).ToString() + "km/h\n"
-            + Mathf.Round(rb.position.y).ToString() + "m";
+        infoText.text = Mathf.Round(rb.velocity.magnitude * 3.6f).ToString() + "km/h\n";
+            //+ Mathf.Round(rb.position.y).ToString() + "m";
     }
 }
