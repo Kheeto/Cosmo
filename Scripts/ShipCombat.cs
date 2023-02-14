@@ -61,16 +61,8 @@ public class ShipCombat : MonoBehaviour
             Missile nextMissile = missiles[0];
             if (nextMissile == null) return; // out of missiles
 
-            if (nextMissile.GetGuidance() == Guidance.IR)
-            {
-                if (lockedOn == null) return; // no target
-                else nextMissile.SetTarget(lockedOn);
-            }
-            else if (nextMissile.GetGuidance() == Guidance.Radar)
-            {
-                if (radar.GetTarget() == null) return; // no target
-                else nextMissile.SetTarget(radar.GetTarget());
-            }
+            if (radar.GetTarget() == null) return; // no target
+            else nextMissile.SetTarget(radar.GetTarget());
 
             nextMissile.Launch();
             missiles.Remove(nextMissile);
