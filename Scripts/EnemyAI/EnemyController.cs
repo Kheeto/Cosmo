@@ -9,8 +9,10 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private float throttle = 0f;
     [SerializeField] private float thrust = 500f;
     [SerializeField] private float turnSpeed = 90f;
-    [SerializeField] private float deviationSpeed;
-    [SerializeField] private float deviationAmount;
+    [SerializeField] private float deviationSpeed = 2f;
+    [SerializeField] private float deviationAmount = 2f;
+    // The spaceship will try to keep this minimum speed and will stop turning if it's too slow
+    [SerializeField] private float minimumSpeed = 30f;
     private float currentThrust = 0f;
 
     [Header("Booster")]
@@ -72,6 +74,7 @@ public class EnemyController : MonoBehaviour
     #region Movement
 
     private Vector3 predictionOffset;
+    private Quaternion currentRotation;
     private void RotateShip()
     {
         Vector3 playerDirection = player.transform.position - transform.position;
@@ -79,9 +82,13 @@ public class EnemyController : MonoBehaviour
         Vector3 deviation = new Vector3(Mathf.Cos(Time.time * deviationSpeed), 0f, 0f);
         predictionOffset = transform.TransformDirection(deviation) * deviationAmount;
 
-        Quaternion rotation = Quaternion.LookRotation(playerDirection + predictionOffset);
+        currentRotation = Quaternion.LookRotation(playerDirection + predictionOffset);
 
-        rb.MoveRotation(Quaternion.RotateTowards(rb.rotation, rotation, turnSpeed * Time.deltaTime));
+        // Only turns when going fast enough
+        if (rb.velocity.normalized.magnitude > minimumSpeed)
+        {
+            rb.MoveRotation(Quaternion.RotateTowards(rb.rotation, currentRotation, turnSpeed * Time.deltaTime));
+        }
     }
 
     private void HandleThrust()
