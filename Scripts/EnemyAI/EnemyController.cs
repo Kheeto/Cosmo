@@ -9,6 +9,8 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private float throttle = 0f;
     [SerializeField] private float thrust = 500f;
     [SerializeField] private float turnSpeed = 90f;
+    [SerializeField] private float deviationSpeed;
+    [SerializeField] private float deviationAmount;
     private float currentThrust = 0f;
 
     [Header("Booster")]
@@ -69,10 +71,15 @@ public class EnemyController : MonoBehaviour
 
     #region Movement
 
+    private Vector3 predictionOffset;
     private void RotateShip()
     {
         Vector3 playerDirection = player.transform.position - transform.position;
-        Quaternion rotation = Quaternion.LookRotation(playerDirection);
+
+        Vector3 deviation = new Vector3(Mathf.Cos(Time.time * deviationSpeed), 0f, 0f);
+        predictionOffset = transform.TransformDirection(deviation) * deviationAmount;
+
+        Quaternion rotation = Quaternion.LookRotation(playerDirection + predictionOffset);
 
         rb.MoveRotation(Quaternion.RotateTowards(rb.rotation, rotation, turnSpeed * Time.deltaTime));
     }
@@ -178,4 +185,15 @@ public class EnemyController : MonoBehaviour
     }
 
     #endregion
+
+    private void OnDrawGizmos()
+    {
+        if (!Application.isPlaying) return;
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawLine(transform.position, player.transform.position);
+
+        Gizmos.color = Color.green;
+        Gizmos.DrawLine(player.transform.position, player.transform.position + predictionOffset);
+    }
 }
