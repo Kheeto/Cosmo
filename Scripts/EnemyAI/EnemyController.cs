@@ -165,7 +165,7 @@ public class EnemyController : MonoBehaviour
         if (nextMissile == null) return; // out of missiles
 
         nextMissile.SetTarget(player.GetComponent<Rigidbody>());
-        nextMissile.Launch();
+        nextMissile.Launch(rb.velocity, rb.angularVelocity);
         missiles.Remove(nextMissile);
     }
 
