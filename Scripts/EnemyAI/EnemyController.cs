@@ -88,6 +88,12 @@ public class EnemyController : MonoBehaviour
         if (rb.velocity.normalized.magnitude > minimumSpeed)
         {
             rb.MoveRotation(Quaternion.RotateTowards(rb.rotation, currentRotation, turnSpeed * Time.deltaTime));
+            usingBooster = false;
+        }
+        else
+        {
+            // If too slow, use boosters
+            usingBooster = true;
         }
     }
 
@@ -153,6 +159,8 @@ public class EnemyController : MonoBehaviour
 
     private void ShootMissile()
     {
+        if (missiles.Count == 0) return;
+
         Missile nextMissile = missiles[0];
         if (nextMissile == null) return; // out of missiles
 
