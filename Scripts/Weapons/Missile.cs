@@ -9,8 +9,11 @@ public class Missile : MonoBehaviour
     [SerializeField] private float turnRate = 250f;
     [SerializeField] private float maxGForce = 30f;
     [SerializeField] private AnimationCurve damageCurve;
-    [SerializeField] private float explosionRadius = 5f;
     [SerializeField] private float range;
+
+    [Header("Explosion")]
+    [SerializeField] private float explosionForce = 10f;
+    [SerializeField] private float explosionRadius = 5f;
 
     [Header("Missile Launch")]
     [SerializeField] private Vector3 separationForce;
@@ -140,6 +143,12 @@ public class Missile : MonoBehaviour
                 else if (m.GetComponentInParent<EnemyController>())
                     m.GetComponentInParent<EnemyController>().Damage(m, damageCurve.Evaluate(distance));
             }
+
+            Rigidbody r = c.gameObject.GetComponent<Rigidbody>();
+            if (r != null)
+            {
+                r.AddExplosionForce(explosionForce, transform.position, explosionRadius, 0f, ForceMode.Impulse);
+            }
         }
         
         if (explosionPrefab)
@@ -165,9 +174,10 @@ public class Missile : MonoBehaviour
 
     public Rigidbody GetTarget() { return target; }
 
-    public void Launch(Vector3 initialVelocity) {
+    public void Launch(Vector3 initialVelocity, Vector3 angularVelocity) {
         rb.isKinematic = false;
         rb.velocity = initialVelocity;
+        rb.angularVelocity = angularVelocity;
         rb.AddForce(separationForce, ForceMode.Impulse);
 
         wasLaunched = true;
