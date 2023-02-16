@@ -19,6 +19,10 @@ public class ShipController : MonoBehaviour
     [SerializeField] private float acceleration = 4.5f;
     private float currentThrust = 0f;
 
+    [Header("Autopilot")]
+    [SerializeField] private float sensitivity = 5f;
+    [SerializeField] private float aggressiveTurnAngle = 10f;
+
     [Header("Booster")]
     [SerializeField] private float boosterThrust = 250f;
     [SerializeField] private float boosterDuration = 10f;
@@ -44,11 +48,23 @@ public class ShipController : MonoBehaviour
     [SerializeField] private KeyCode engineKey = KeyCode.I;
     [SerializeField] private KeyCode boosterKey = KeyCode.LeftShift;
 
-    // Input & movement
-    private Vector3 currentSpeed;
-    private Vector3 movementInput;
-    private float hoverInput;
+    [Header("References")]
+    [SerializeField] private MouseFlight controller;
+
+    [Header("Input")]
+    [SerializeField] private float forceMult;
+    [SerializeField] [Range(-1f, 1f)] private float pitch = 0f;
+    [SerializeField] [Range(-1f, 1f)] private float yaw = 0f;
+    [SerializeField] [Range(-1f, 1f)] private float roll = 0f;
+    public float Pitch { set { pitch = Mathf.Clamp(value, -1f, 1f); } get { return pitch; } }
+    public float Yaw { set { yaw = Mathf.Clamp(value, -1f, 1f); } get { return yaw; } }
+    public float Roll { set { roll = Mathf.Clamp(value, -1f, 1f); } get { return roll; } }
+
+    public Vector3 movementInput;
     private Vector2 lookInput, screenCenter, mouseDistance;
+
+    public bool pitchOverride = false;
+    public bool rollOverride = false;
 
     private Rigidbody rb;
 
@@ -58,7 +74,7 @@ public class ShipController : MonoBehaviour
 
         screenCenter.x = Screen.width / 2;
         screenCenter.y = Screen.height / 2;
-        Cursor.lockState = CursorLockMode.Confined;
+        Cursor.lockState = CursorLockMode.Locked;
 
         throttleBarHeight = throttleBar.rectTransform.rect.height;
         boosterBarHeight = boosterBar.rectTransform.rect.height;
@@ -79,11 +95,23 @@ public class ShipController : MonoBehaviour
 
     private void HandleInput()
     {
+        rollOverride = false;
+        pitchOverride = false;
+
         // Movement input
         float Pitch = Input.GetAxis("Vertical");
         float Roll = Input.GetAxis("Horizontal");
-        float Yaw = Input.GetAxis("Diagonal");
-        movementInput = new Vector3(Pitch, Roll, Yaw);
+        //float Yaw = Input.GetAxis("Diagonal");
+
+        // When the player commands their own stick input,
+        // it should override the autopilot
+        if (Mathf.Abs(Pitch) > .25f)
+        {
+            pitchOverride = true;
+            rollOverride = true;
+        }
+        if (Mathf.Abs(Roll) > .25f)
+            rollOverride = true;
 
         // Look input
         lookInput.x = Input.mousePosition.x;
@@ -101,6 +129,45 @@ public class ShipController : MonoBehaviour
 
         if (boosterTimer > 0) usingBooster = Input.GetKey(boosterKey);
         else usingBooster = false;
+
+        // Calculate the autopilot inputs.
+        float autoPitch = 0f;
+        float autoRoll = 0f;
+        float autoYaw = 0f;
+
+        if (controller != null)
+            RunAutopilot(controller.MouseAimPos, out autoYaw, out autoPitch, out autoRoll);
+
+        pitch = (pitchOverride) ? Pitch : autoPitch;
+        roll = (rollOverride) ? Roll : autoRoll;
+        yaw = autoYaw; // (yawOverride) ? Yaw
+    }
+
+    // These inputs are created proportionally, so this can be prone to overshooting.
+    // The physics in this example are tweaked so that it's not a big issue,
+    // but using a PID controller for each axis is highly recommended.
+    private void RunAutopilot(Vector3 flyTarget, out float yaw, out float pitch, out float roll)
+    {
+        // Converts the fly to position to local space
+        var localFlyTarget = transform.InverseTransformPoint(flyTarget).normalized * sensitivity;
+        var angleOffTarget = Vector3.Angle(transform.forward, flyTarget - transform.position);
+
+        // Pitch and Yaw
+        yaw = Mathf.Clamp(localFlyTarget.x, -1f, 1f);
+        pitch = -Mathf.Clamp(localFlyTarget.y, -1f, 1f);
+
+        // There are two different roll commands depending on the situation.
+        // If target is off axis, then roll into it, if it's directly in front, fly wings level
+
+        // Rolls into the target so that pitching up will put the nose onto the target
+        var agressiveRoll = Mathf.Clamp(localFlyTarget.x, -1f, 1f);
+
+        // Commands the aircraft to fly wings level.
+        var wingsLevelRoll = transform.right.y;
+
+        // Blend between auto level and banking into the target.
+        var wingsLevelInfluence = Mathf.InverseLerp(0f, aggressiveTurnAngle, angleOffTarget);
+        roll = Mathf.Lerp(wingsLevelRoll, agressiveRoll, wingsLevelInfluence);
     }
 
     private void HandleThrust()
@@ -138,7 +205,7 @@ public class ShipController : MonoBehaviour
 
         Vector3 lookRotation = new Vector3(-mouseDistance.y * lookSpeed * Time.fixedDeltaTime,
             mouseDistance.x * lookSpeed * Time.fixedDeltaTime, 0f);
-        // Keyboard rotation
+        /* Keyboard rotation
         currentSpeed.x = Mathf.Lerp(currentSpeed.x,
             movementInput.x * pitchSpeed,
             acceleration * Time.fixedDeltaTime);
@@ -147,12 +214,16 @@ public class ShipController : MonoBehaviour
             acceleration * Time.fixedDeltaTime);
         currentSpeed.z = Mathf.Lerp(currentSpeed.z,
             -movementInput.y * rollSpeed,
-            acceleration * Time.fixedDeltaTime);
+            acceleration * Time.fixedDeltaTime);*/
 
         // applies thrust and the look rotation
-        rb.AddRelativeTorque(lookRotation, ForceMode.Force);
-        rb.AddRelativeTorque(currentSpeed.x * Time.fixedDeltaTime,
-                currentSpeed.y * Time.fixedDeltaTime, currentSpeed.z * Time.fixedDeltaTime);
+        //rb.AddRelativeTorque(lookRotation, ForceMode.Force);
+        //rb.AddRelativeTorque(currentSpeed.x * Time.fixedDeltaTime,
+        //        currentSpeed.y * Time.fixedDeltaTime, currentSpeed.z * Time.fixedDeltaTime);
+
+        rb.AddRelativeTorque(new Vector3(pitch * pitchSpeed,
+            yaw * yawSpeed, -roll * rollSpeed) * forceMult, ForceMode.Force);
+
         rb.AddForce(transform.forward * currentThrust, ForceMode.Force);
     }
 
