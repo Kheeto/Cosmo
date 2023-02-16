@@ -58,6 +58,8 @@ public class ShipCombat : MonoBehaviour
     {
         if (Input.GetKeyDown(fireMissileKey))
         {
+            if (missiles.Count == 0) return;
+
             Missile nextMissile = missiles[0];
             if (nextMissile == null) return; // out of missiles
 
