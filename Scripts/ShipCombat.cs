@@ -36,6 +36,9 @@ public class ShipCombat : MonoBehaviour
     [SerializeField] private KeyCode fireCountermeasureKey = KeyCode.Mouse4;
     [SerializeField] private KeyCode IRLockKey = KeyCode.T;
 
+    [Header("References")]
+    [SerializeField] private Rigidbody rb;
+
     private void Update()
     {
         HandleCannons();
@@ -66,7 +69,7 @@ public class ShipCombat : MonoBehaviour
             if (radar.GetTarget() == null) return; // no target
             else nextMissile.SetTarget(radar.GetTarget());
 
-            nextMissile.Launch();
+            nextMissile.Launch(rb.velocity, rb.angularVelocity);
             missiles.Remove(nextMissile);
         }
     }
