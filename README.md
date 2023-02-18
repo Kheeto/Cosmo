@@ -1,5 +1,5 @@
-# Unity-SCS
-Space Combat game prototype in unity 2021.3.10f1<br>
+# Cosmo
+Space Combat game made in unity 3D (2021.3.10f1)<br>
 
 Includes working cannons, radar system, IR/radar guided homing missiles, countermeasures, damage modules, spacecraft movement and simulated gravity and orbits<br>
 Keep in mind this is an prototype i'm still working on, i'm working on new features and it may have bugs
