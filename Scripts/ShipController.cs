@@ -61,7 +61,6 @@ public class ShipController : MonoBehaviour
     public float Roll { set { roll = Mathf.Clamp(value, -1f, 1f); } get { return roll; } }
 
     public Vector3 movementInput;
-    private Vector2 lookInput, screenCenter, mouseDistance;
 
     public bool pitchOverride = false;
     public bool rollOverride = false;
@@ -72,8 +71,6 @@ public class ShipController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
 
-        screenCenter.x = Screen.width / 2;
-        screenCenter.y = Screen.height / 2;
         Cursor.lockState = CursorLockMode.Locked;
 
         throttleBarHeight = throttleBar.rectTransform.rect.height;
@@ -112,14 +109,6 @@ public class ShipController : MonoBehaviour
         }
         if (Mathf.Abs(Roll) > .25f)
             rollOverride = true;
-
-        // Look input
-        lookInput.x = Input.mousePosition.x;
-        lookInput.y = Input.mousePosition.y;
-
-        mouseDistance.x = (lookInput.x - screenCenter.x) / screenCenter.y;
-        mouseDistance.y = (lookInput.y - screenCenter.y) / screenCenter.y;
-        mouseDistance = Vector2.ClampMagnitude(mouseDistance, 1f);
 
         // Throttle and engine control
         float ThrottleInput = Input.GetAxis("Mouse ScrollWheel") * throttleSensivity;
@@ -202,24 +191,6 @@ public class ShipController : MonoBehaviour
     private void HandleMovement()
     {
         if (!engineOn) return;
-
-        Vector3 lookRotation = new Vector3(-mouseDistance.y * lookSpeed * Time.fixedDeltaTime,
-            mouseDistance.x * lookSpeed * Time.fixedDeltaTime, 0f);
-        /* Keyboard rotation
-        currentSpeed.x = Mathf.Lerp(currentSpeed.x,
-            movementInput.x * pitchSpeed,
-            acceleration * Time.fixedDeltaTime);
-        currentSpeed.y = Mathf.Lerp(currentSpeed.y,
-            -movementInput.z * yawSpeed,
-            acceleration * Time.fixedDeltaTime);
-        currentSpeed.z = Mathf.Lerp(currentSpeed.z,
-            -movementInput.y * rollSpeed,
-            acceleration * Time.fixedDeltaTime);*/
-
-        // applies thrust and the look rotation
-        //rb.AddRelativeTorque(lookRotation, ForceMode.Force);
-        //rb.AddRelativeTorque(currentSpeed.x * Time.fixedDeltaTime,
-        //        currentSpeed.y * Time.fixedDeltaTime, currentSpeed.z * Time.fixedDeltaTime);
 
         rb.AddRelativeTorque(new Vector3(pitch * pitchSpeed,
             yaw * yawSpeed, -roll * rollSpeed) * forceMult, ForceMode.Force);
