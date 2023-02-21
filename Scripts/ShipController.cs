@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.Rendering;
 
 public class ShipController : MonoBehaviour
 {
@@ -65,6 +67,11 @@ public class ShipController : MonoBehaviour
     public bool pitchOverride = false;
     public bool rollOverride = false;
 
+    [Header("G Force")]
+    [SerializeField] private TMP_Text gMeter;
+    private float currentGForce;
+    private Vector3 lastVel;
+
     private Rigidbody rb;
 
     private void Start()
@@ -83,11 +90,17 @@ public class ShipController : MonoBehaviour
         HandleThrust();
         HandleBooster();
         HandleUI();
+        HandleGForce();
     }
 
     private void FixedUpdate()
     {
+        float currentVel = rb.velocity.magnitude;
+
         HandleMovement();
+
+        currentGForce = (currentVel - lastVel.magnitude) / (Time.fixedDeltaTime * Physics.gravity.magnitude);
+        lastVel = rb.velocity;
     }
 
     private void HandleInput()
@@ -98,7 +111,6 @@ public class ShipController : MonoBehaviour
         // Movement input
         float Pitch = Input.GetAxis("Vertical");
         float Roll = Input.GetAxis("Horizontal");
-        //float Yaw = Input.GetAxis("Diagonal");
 
         // When the player commands their own stick input,
         // it should override the autopilot
@@ -208,5 +220,10 @@ public class ShipController : MonoBehaviour
         throttleText.text = Mathf.Round(throttle).ToString() + "%";
         infoText.text = Mathf.Round(rb.velocity.magnitude * 3.6f).ToString() + "km/h\n";
             //+ Mathf.Round(rb.position.y).ToString() + "m";
+    }
+
+    private void HandleGForce()
+    {
+        gMeter.text = currentGForce.ToString("0.00") + " G";
     }
 }
