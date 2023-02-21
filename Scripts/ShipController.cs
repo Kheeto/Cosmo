@@ -55,6 +55,7 @@ public class ShipController : MonoBehaviour
 
     [Header("Input")]
     [SerializeField] private float forceMult;
+    private float currentForceMult;
     [SerializeField] [Range(-1f, 1f)] private float pitch = 0f;
     [SerializeField] [Range(-1f, 1f)] private float yaw = 0f;
     [SerializeField] [Range(-1f, 1f)] private float roll = 0f;
@@ -68,7 +69,13 @@ public class ShipController : MonoBehaviour
     public bool rollOverride = false;
 
     [Header("G Force")]
+    [SerializeField] private float maxPositiveGForce = 15f;
+    [SerializeField] private float minNegativeGForce = -4f;
+    [SerializeField] private float gForceMovementMultiplier = .2f;
+    [Space(10)]
     [SerializeField] private TMP_Text gMeter;
+    [SerializeField] private Color gMeterDefaultColor;
+    [SerializeField] private Color gMeterWarningColor;
     private float currentGForce;
     private Vector3 lastVel;
 
@@ -205,7 +212,7 @@ public class ShipController : MonoBehaviour
         if (!engineOn) return;
 
         rb.AddRelativeTorque(new Vector3(pitch * pitchSpeed,
-            yaw * yawSpeed, -roll * rollSpeed) * forceMult, ForceMode.Force);
+            yaw * yawSpeed, -roll * rollSpeed) * currentForceMult, ForceMode.Force);
 
         rb.AddForce(transform.forward * currentThrust, ForceMode.Force);
     }
@@ -225,5 +232,16 @@ public class ShipController : MonoBehaviour
     private void HandleGForce()
     {
         gMeter.text = currentGForce.ToString("0.00") + " G";
+
+        if (currentGForce > maxPositiveGForce || currentGForce < minNegativeGForce)
+        {
+            gMeter.color = gMeterWarningColor;
+            currentForceMult = gForceMovementMultiplier;
+        }
+        else
+        {
+            gMeter.color = gMeterDefaultColor;
+            currentForceMult = forceMult;
+        }
     }
 }
