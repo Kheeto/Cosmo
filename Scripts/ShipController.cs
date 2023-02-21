@@ -102,11 +102,11 @@ public class ShipController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        float currentVel = rb.velocity.magnitude;
-
         HandleMovement();
 
-        currentGForce = (currentVel - lastVel.magnitude) / (Time.fixedDeltaTime * Physics.gravity.magnitude);
+        Vector3 acceleration = (rb.velocity - lastVel);
+        currentGForce = acceleration.magnitude / (Time.fixedDeltaTime * Physics.gravity.magnitude);
+
         lastVel = rb.velocity;
     }
 
