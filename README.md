@@ -9,3 +9,7 @@ Keep in mind this is an prototype i'm still working on, i'm working on new featu
 ![Example Space Controller Image](https://github.com/Kheeto/Unity-SCS/blob/main/.github/ship%20inspector.PNG)
 ![Example Missile Settings Image](https://github.com/Kheeto/Unity-SCS/blob/main/.github/missile%20inspector.PNG)
 ![Example Damage Module Image](https://github.com/Kheeto/Unity-SCS/blob/main/.github/module%20inspector.PNG)
+
+## Credits
+I'm using the MouseFlight system made by https://github.com/brihernandez/MouseFlight<br>
+It replicates the aiming system from War Thunder in unity.
