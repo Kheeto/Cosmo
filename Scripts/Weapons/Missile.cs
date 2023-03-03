@@ -187,5 +187,10 @@ public class Missile : MonoBehaviour
 
         if (ammoText != null) ammoText.UpdateAmmoText();
         if (missileWarning != null) missileWarning.AddMissile(this);
+
+        EnemyController enemy = target.gameObject.GetComponent<EnemyController>();
+        if (enemy != null)
+            enemy.AddMissile(this);
+
     }
 }
