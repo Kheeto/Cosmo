@@ -5,7 +5,7 @@ using UnityEngine;
 public class MissileWarning : MonoBehaviour
 {
     [Header("Flashing effect")]
-    [SerializeField] private float showDuration = .5f;
+    [SerializeField] private float showDuration = .2f;
     [SerializeField] private float hideDuration = .1f;
     private float showTimer = 0f;
     private float hideTimer = 0f;
@@ -29,8 +29,8 @@ public class MissileWarning : MonoBehaviour
     {
         foreach (Missile m in incomingMissiles)
         {
-            if (m.GetTarget() != owner) incomingMissiles.Remove(m);
             if (m == null) incomingMissiles.Remove(m);
+            if (m.GetTarget() != owner) incomingMissiles.Remove(m);
         }
 
         if (incomingMissiles.Count > 0) warningActive = true;
