@@ -38,10 +38,11 @@ public class EnemyController : MonoBehaviour
     [Header("Countermeasures")]
     [SerializeField] private float minCountermeasureDistance;
     [SerializeField] private float maxCountermeasureDistance;
+    [SerializeField] private float countermeasureCount = 75f;
+    [SerializeField] private float dropAmount = 1f;
     [SerializeField] private Transform dropPosition;
-    [SerializeField] private float chaffCount = 75f;
-    [SerializeField] private float chaffDropAmount = 1f;
-    [SerializeField] private GameObject chaffPrefab;
+    [SerializeField] private GameObject countermeasurePrefab;
+    private List<Missile> incomingMissiles;
 
     private Vector3 movementDirection;
     private Vector3 currentSpeed;
@@ -85,7 +86,7 @@ public class EnemyController : MonoBehaviour
         currentRotation = Quaternion.LookRotation(playerDirection + predictionOffset);
 
         // Only turns when going fast enough
-        if (rb.velocity.normalized.magnitude > minimumSpeed)
+        if (rb.velocity.magnitude > minimumSpeed)
         {
             rb.MoveRotation(Quaternion.RotateTowards(rb.rotation, currentRotation, turnSpeed * Time.deltaTime));
             usingBooster = false;
@@ -171,10 +172,25 @@ public class EnemyController : MonoBehaviour
 
     private void DropCountermeasures()
     {
-        if (chaffCount > 0)
+        if (incomingMissiles.Count == 0) return;
+
+        List<Missile> closeMissiles = new List<Missile>();
+        foreach (Missile m in incomingMissiles)
         {
-            chaffCount -= chaffDropAmount;
-            Instantiate(chaffPrefab, dropPosition.position, dropPosition.rotation, dropPosition);
+            float d = Vector3.Distance(transform.position, m.transform.position);
+            if (d < maxCountermeasureDistance && d > minCountermeasureDistance)
+                closeMissiles.Add(m);
+        }
+
+        if (closeMissiles.Count == 0) return;
+
+        if (countermeasureCount > 0)
+        {
+            countermeasureCount -= dropAmount;
+            for (int i = 0; i < dropAmount; i++)
+            {
+                Instantiate(countermeasurePrefab, dropPosition.position, dropPosition.rotation, dropPosition);
+            }
         }
     }
 
@@ -210,5 +226,10 @@ public class EnemyController : MonoBehaviour
 
         Gizmos.color = Color.green;
         Gizmos.DrawLine(player.transform.position, player.transform.position + predictionOffset);
+    }
+
+    public void AddMissile(Missile m)
+    {
+        incomingMissiles.Add(m);
     }
 }
