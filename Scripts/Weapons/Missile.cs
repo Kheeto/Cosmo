@@ -17,8 +17,10 @@ public class Missile : MonoBehaviour
 
     [Header("Missile Launch")]
     [SerializeField] private Vector3 separationForce;
-    [SerializeField] private float timeBeforeTurning = 1f;
-    private float timeBeforeTurningTimer = 0f;
+    [SerializeField] private float engineStartDelay = 1f;
+    [SerializeField] private float turnDelay = 1f;
+    private float engineStartTimer = 0f;
+    private float turnTimer = 0f;
 
     [Header("Radar Guidance")]
     [SerializeField] private Radar radar;
@@ -69,8 +71,19 @@ public class Missile : MonoBehaviour
 
         CheckForRadarTarget();
 
-        if (engineOn && timeBeforeTurningTimer < timeBeforeTurning)
-            timeBeforeTurningTimer += Time.deltaTime;
+        if (wasLaunched && engineStartTimer < engineStartDelay)
+        {
+            engineStartTimer += Time.deltaTime;
+            engineOn = false;
+        }
+        else if (wasLaunched && engineStartTimer >= engineStartDelay)
+            engineOn = true;
+
+        if (wasLaunched && turnTimer < turnDelay)
+            turnTimer += Time.deltaTime;
+
+        if (engineOn && particleEffects)
+            particleEffects.SetActive(true);
     }
 
     private void FixedUpdate()
@@ -101,7 +114,7 @@ public class Missile : MonoBehaviour
     private void RotateMissile()
     {
         if (!engineOn) return;
-        if (timeBeforeTurningTimer < timeBeforeTurning) return;
+        if (turnTimer < turnDelay) return;
 
         Vector3 heading = prediction - transform.position;
         Quaternion rotation = Quaternion.LookRotation(heading);
@@ -122,12 +135,12 @@ public class Missile : MonoBehaviour
         }
     }
 
-    bool alreadyHit;
+    bool alreadyExploded;
     private void OnCollisionEnter(Collision collision)
     {
-        alreadyHit = false;
-        if (alreadyHit) return;
-        alreadyHit = true;
+        alreadyExploded = false;
+        if (alreadyExploded) return;
+        alreadyExploded = true;
 
         // Damages every object in explosion radius
         Collider[] colliders = Physics.OverlapSphere(rb.position, explosionRadius);
@@ -178,12 +191,9 @@ public class Missile : MonoBehaviour
         rb.isKinematic = false;
         rb.velocity = initialVelocity;
         rb.angularVelocity = angularVelocity;
-        rb.AddForce(separationForce, ForceMode.Impulse);
+        rb.AddRelativeForce(separationForce, ForceMode.Impulse);
 
         wasLaunched = true;
-        engineOn = true;
-        if (particleEffects)
-            particleEffects.SetActive(true);
 
         if (ammoText != null) ammoText.UpdateAmmoText();
         if (missileWarning != null) missileWarning.AddMissile(this);
@@ -191,6 +201,5 @@ public class Missile : MonoBehaviour
         EnemyController enemy = target.gameObject.GetComponent<EnemyController>();
         if (enemy != null)
             enemy.AddMissile(this);
-
     }
 }
