@@ -37,7 +37,7 @@ public class Cannon : MonoBehaviour
     private float currentReloadDelay;
     private float currentOverheatTime;
     private float currentOverheatDelay;
-    private int currentAmmo;
+    private float currentAmmo;
     private bool canShoot;
     private bool isShooting;
     private bool shouldShoot;
@@ -78,7 +78,7 @@ public class Cannon : MonoBehaviour
             return;
         }
         if (overheated) return;
-        if (currentAmmo <= 0) return; // need ammo to reload
+        if (currentAmmo < 1) return; // need ammo to reload
         if (!canShoot) return;
         Debug.Log("shot");
 
@@ -144,9 +144,7 @@ public class Cannon : MonoBehaviour
         if (currentReloadDelay >= reloadDelay)
         {
             //int ammo = Mathf.RoundToInt(Mathf.Lerp(currentAmmo, maxAmmo, reloadSpeed * Time.deltaTime));
-            lerp += Time.deltaTime / reloadSpeed;
-            int ammo = (int)Mathf.Lerp(currentAmmo, maxAmmo, lerp);
-            currentAmmo = ammo;
+            currentAmmo = Mathf.Lerp(currentAmmo, maxAmmo, Time.deltaTime / reloadSpeed);
 
             UpdateUI();
         }
@@ -164,7 +162,7 @@ public class Cannon : MonoBehaviour
         shouldShoot = value;
     }
 
-    public int GetCurrentAmmo() { return currentAmmo; }
+    public float GetCurrentAmmo() { return currentAmmo; }
 
     private void UpdateUI()
     {
