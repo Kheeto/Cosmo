@@ -40,9 +40,11 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private float maxCountermeasureDistance;
     [SerializeField] private float countermeasureCount = 75f;
     [SerializeField] private float dropAmount = 1f;
+    [SerializeField] private float dropDelay = 0.5f;
     [SerializeField] private Transform dropPosition;
     [SerializeField] private GameObject countermeasurePrefab;
     private List<Missile> incomingMissiles;
+    private float dropTimer;
 
     private Vector3 movementDirection;
     private Vector3 currentSpeed;
@@ -53,6 +55,7 @@ public class EnemyController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         player = FindObjectOfType<ShipController>().gameObject;
+        incomingMissiles = new List<Missile>();
     }
 
     private void Update()
@@ -65,6 +68,7 @@ public class EnemyController : MonoBehaviour
         // Combat
         LookForPlayer();
         HandleWeapons();
+        DropCountermeasures();
     }
 
     private void FixedUpdate()
@@ -172,6 +176,9 @@ public class EnemyController : MonoBehaviour
 
     private void DropCountermeasures()
     {
+        if (dropTimer < dropDelay)
+            dropTimer += Time.deltaTime;
+
         if (incomingMissiles.Count == 0) return;
 
         List<Missile> closeMissiles = new List<Missile>();
@@ -184,12 +191,13 @@ public class EnemyController : MonoBehaviour
 
         if (closeMissiles.Count == 0) return;
 
-        if (countermeasureCount > 0)
+        if (countermeasureCount > 0 && dropTimer >= dropDelay)
         {
+            dropTimer = 0f;
             countermeasureCount -= dropAmount;
             for (int i = 0; i < dropAmount; i++)
             {
-                Instantiate(countermeasurePrefab, dropPosition.position, dropPosition.rotation, dropPosition);
+                Instantiate(countermeasurePrefab, dropPosition.position, dropPosition.rotation);
             }
         }
     }
