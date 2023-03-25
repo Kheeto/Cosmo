@@ -138,6 +138,9 @@ public class Missile : MonoBehaviour
     bool alreadyExploded;
     private void OnCollisionEnter(Collision collision)
     {
+        if (!wasLaunched) return;
+        if (!engineOn) return;
+
         alreadyExploded = false;
         if (alreadyExploded) return;
         alreadyExploded = true;
