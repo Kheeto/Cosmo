@@ -33,6 +33,9 @@ public class Cannon : MonoBehaviour
     [SerializeField] private Color overheatColor;
     private float ammoBarHeight;
 
+    [Header("Audio")]
+    [SerializeField] private GameObject soundPrefab;
+
 
     private float currentReloadDelay;
     private float currentOverheatTime;
@@ -103,6 +106,7 @@ public class Cannon : MonoBehaviour
         Invoke(nameof(ResetShooting), 1f / fireRate);
 
         Instantiate(muzzleFlash, transform.position, transform.rotation);
+        Instantiate(soundPrefab, transform.position, transform.rotation);
 
         UpdateUI();
     }
