@@ -31,6 +31,7 @@ public class PlayerController : MonoBehaviour
 
         Movement();
         Jump();
+        RotateToGravity();
     }
 
     private void Movement()
@@ -50,5 +51,28 @@ public class PlayerController : MonoBehaviour
         {
             rb.AddRelativeForce(Vector3.up * JumpForce);
         }
+    }
+
+    /// <summary>
+    /// Rotates the Player relatively to the planet he is closest to, so he always appears standing perpendicularly to the planet's surface.
+    /// </summary>
+    private void RotateToGravity()
+    {
+        Vector3 strongestGravitationalPull = Vector3.zero;
+
+        // Find the strongest pull
+        foreach (GravitationalObject obj in GravitationalObject.Objects)
+        {
+            float distanceSqr = (obj.transform.position - rb.position).sqrMagnitude;
+            Vector3 forceDir = (obj.transform.position - rb.position).normalized;
+            Vector3 acceleration = forceDir * GravitationalObject.G * obj.mass / distanceSqr;
+            
+            if (acceleration.sqrMagnitude > strongestGravitationalPull.sqrMagnitude) {
+                strongestGravitationalPull = acceleration;
+            }
+        }
+
+        Vector3 gravityUp = -strongestGravitationalPull.normalized;
+        rb.rotation = Quaternion.FromToRotation(transform.up, gravityUp) * rb.rotation;
     }
 }
