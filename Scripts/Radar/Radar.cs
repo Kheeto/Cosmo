@@ -82,7 +82,7 @@ public class Radar : MonoBehaviour
 
     private void HandleRadar()
     {
-        RaycastHit[] hits = Utilities.ConeCastAll(radarOrientation.position, castRadius,
+        RaycastHit[] hits = ConeCastAll(radarOrientation.position, castRadius,
             radarOrientation.forward, radarRange, radarAngle, targetMask, QueryTriggerInteraction.Collide);
         foreach (RaycastHit hit in hits)
         {
@@ -190,17 +190,26 @@ public class Radar : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Removes a ping from the list after waiting the provided delay
+    /// </summary>
     private IEnumerator RemovePing(RadarPing ping, float duration)
     {
         yield return new WaitForSeconds(duration);
         pingList.Remove(ping);
     }
 
+    /// <summary>
+    /// Returns the list of pings this radar is tracking
+    /// </summary>
     public List<RadarPing> GetRadarPings()
     {
         return pingList;
     }
 
+    /// <summary>
+    /// Creates and updates Radar UI objects while deleting the old ones.
+    /// </summary>
     public void UpdateRadarInfoUI()
     {
         // Makes sure every radar ping has an info ui object
@@ -256,5 +265,56 @@ public class Radar : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Returns the target the radar is currently locked on.
+    /// </summary>
     public Rigidbody GetTarget() { return lockedOn; }
+
+    /// <summary>
+    /// Returns all the hits the cone intersects by using a SphereCast and cutting out the hits that exceed the maximum angle
+    /// </summary>
+    /// <param name="origin">The origin of the cone</param>
+    /// <param name="maxRadius">The maximum distance between the origin and the hit</param>
+    /// <param name="direction">The direction the cone will be casted</param>
+    /// <param name="maxDistance">The maximum length of the sweep</param>
+    /// <param name="coneAngle">The maximum angle between the origin direction and the hit direction</param>
+    /// <param name="mask">The layer mask of the objects detectable by this radar</param>
+    /// <param name="qti">The query trigger interaction</param>
+    /// <returns></returns>
+    public static RaycastHit[] ConeCastAll(
+        Vector3 origin,
+        float maxRadius,
+        Vector3 direction,
+        float maxDistance,
+        float coneAngle,
+        LayerMask mask,
+        QueryTriggerInteraction qti)
+    {
+        // Find all hits with a Sphere Cast
+        RaycastHit[] sphereCastHits = Physics.SphereCastAll(origin - new Vector3(0, 0, maxRadius), maxRadius, direction, maxDistance, mask, qti);
+        List<RaycastHit> coneCastHitList = new List<RaycastHit>();
+
+        if (sphereCastHits.Length > 0)
+        {
+            for (int i = 0; i < sphereCastHits.Length; i++)
+            {
+                // Calculate the angle
+                Vector3 hitPoint = sphereCastHits[i].point;
+                Vector3 directionToHit = hitPoint - origin;
+                float angleToHit = Vector3.Angle(direction, directionToHit);
+
+                // Only count the hits within the maximum angle
+                if (angleToHit < coneAngle)
+                {
+                    coneCastHitList.Add(sphereCastHits[i]);
+                }
+            }
+        }
+
+        // Only return the hits that are within the cone
+        RaycastHit[] coneCastHits = new RaycastHit[coneCastHitList.Count];
+        coneCastHits = coneCastHitList.ToArray();
+
+        return coneCastHits;
+    }
 }

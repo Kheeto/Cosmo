@@ -90,9 +90,21 @@ public class Missile : MonoBehaviour
     {
         if(engineOn) rb.AddForce(transform.forward * thrust);
 
-        currentGForce = Utilities.CalculateGForce(rb, lastVelocity);
+        currentGForce = CalculateGForce(rb, lastVelocity);
 
         lastVelocity = rb.velocity;
+    }
+
+    /// <summary>
+    /// Calculates the G Force acting on the missile
+    /// </summary>
+    public static float CalculateGForce(Rigidbody rb, Vector3 lastVelocity)
+    {
+        Vector3 currentVelocity = rb.velocity;
+        Vector3 acceleration = (currentVelocity - lastVelocity) / Time.fixedDeltaTime;
+
+        float Gforce = acceleration.normalized.magnitude / Physics.gravity.magnitude;
+        return Gforce;
     }
 
     private void PredictMovement(float leadTimePercentage)
