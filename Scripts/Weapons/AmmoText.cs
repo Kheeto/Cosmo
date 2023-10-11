@@ -18,7 +18,7 @@ public class AmmoText : MonoBehaviour
 
     public void UpdateAmmoText()
     {
-        int cannonAmmo = 0;
+        float cannonAmmo = 0;
         foreach (Cannon c in cannons)
         {
             cannonAmmo += c.GetCurrentAmmo();
@@ -29,6 +29,6 @@ public class AmmoText : MonoBehaviour
             if (!m.wasLaunched) missileCount++;
         }
 
-        ammoText.text = "CNN " + cannonAmmo + "\nMSL " + missileCount;
+        ammoText.text = "CNN " + cannonAmmo.ToString("0") + "\nMSL " + missileCount.ToString("0");
     }
 }

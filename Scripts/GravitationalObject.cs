@@ -4,8 +4,7 @@ using UnityEngine;
 
 public class GravitationalObject : MonoBehaviour
 {
-	const float G = 667.4f;
-	
+	public static float G = 667.4f;
 	public static List<GravitationalObject> Objects;
 
 	[Header("Gravitational Object")]

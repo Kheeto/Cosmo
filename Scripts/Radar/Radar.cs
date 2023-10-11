@@ -77,7 +77,7 @@ public class Radar : MonoBehaviour
         }
 
         // rotates radar UI based on ship rotation
-        if (enableRadarUI) radarUI.transform.eulerAngles = new Vector3(0f, 0f, transform.eulerAngles.y);
+        if (enableRadarUI && radarUI != null) radarUI.transform.eulerAngles = new Vector3(0f, 0f, transform.eulerAngles.y);
     }
 
     private void HandleRadar()

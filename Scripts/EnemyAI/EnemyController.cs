@@ -180,6 +180,11 @@ public class EnemyController : MonoBehaviour
             dropTimer += Time.deltaTime;
 
         if (incomingMissiles.Count == 0) return;
+        List<Missile> remove = new List<Missile>();
+        foreach (Missile m in incomingMissiles)
+            if (m == null) remove.Add(m);
+        foreach (Missile m in remove)
+            incomingMissiles.Remove(m);
 
         List<Missile> closeMissiles = new List<Missile>();
         foreach (Missile m in incomingMissiles)

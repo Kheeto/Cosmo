@@ -94,8 +94,7 @@ public class MouseFlight : MonoBehaviour
         float mouseX = Input.GetAxis("Mouse X") * sensitivity;
         float mouseY = -Input.GetAxis("Mouse Y") * sensitivity;
 
-        // Rotate the aim target that the plane is meant to fly towards.
-        // Use the camera's axes in world space so that mouse motion is intuitive.
+        // Rotate the aim target to where the spaceship is meant to fly towards
         mouseAim.Rotate(camera.right, mouseY, Space.World);
         mouseAim.Rotate(camera.up, mouseX, Space.World);
 
