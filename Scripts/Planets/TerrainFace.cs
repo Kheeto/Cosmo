@@ -1,9 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class TerrainFace
-{
+public class TerrainFace {
+
     ShapeGenerator shapeGenerator;
     Mesh mesh;
     int resolution;
@@ -22,6 +20,9 @@ public class TerrainFace
         axisB = Vector3.Cross(localUp, axisA);
     }
 
+    /// <summary>
+    /// Construct the mesh of this face by generating vertices and triangles
+    /// </summary>
     public void ConstructMesh()
     {
         Vector3[] vertices = new Vector3[resolution * resolution];
@@ -37,11 +38,14 @@ public class TerrainFace
                 int i = x + y * resolution; // What iteration is being executed
                 Vector2 percent = new Vector2(x, y) / (resolution - 1);
                 Vector3 pointOnUnitCube = localUp + (percent.x - .5f) * 2 * axisA + (percent.y - .5f) * 2 * axisB;
-                Vector3 pointOnUnitSphere = pointOnUnitCube.normalized;
+                Vector3 pointOnUnitSphere = pointOnUnitCube.normalized; // In a sphere, all points are at the same distance from the center
+
+                // Generate elevated vertices and UVs
                 float unscaledElevation = shapeGenerator.CalculateUnscaledElevation(pointOnUnitSphere);
                 vertices[i] = pointOnUnitSphere * shapeGenerator.GetScaledElevation(unscaledElevation);
                 uv[i].y = unscaledElevation;
 
+                // Generate triangles
                 if (x != resolution - 1 && y != resolution - 1)
                 {
                     triangles[triIndex] = i;

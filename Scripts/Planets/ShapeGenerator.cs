@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ShapeGenerator {
@@ -19,6 +17,9 @@ public class ShapeGenerator {
         elevationMinMax = new MinMax();
     }
 
+    /// <summary>
+    /// Returns the unscaledElevation at the specified point by calculating the total elevation from multiple noiseFilters
+    /// </summary>
     public float CalculateUnscaledElevation(Vector3 pointOnUnitSphere)
     {
         float firstLayerValue = 0;
@@ -43,6 +44,9 @@ public class ShapeGenerator {
         return elevation;
     }
 
+    /// <summary>
+    /// Scales the unscaledElevation to the radius of the planet and returns the resulting value
+    /// </summary>
     public float GetScaledElevation(float unscaledElevation)
     {
         float elevation = Mathf.Max(0, unscaledElevation);

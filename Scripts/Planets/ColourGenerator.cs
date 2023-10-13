@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ColourGenerator {
@@ -12,9 +10,9 @@ public class ColourGenerator {
     public void UpdateSettings(ColourSettings settings)
     {
         this.settings = settings;
-        if (texture == null || texture.height != settings.biomeColourSettings.biomes.Length)
-        {
-            texture = new Texture2D(textureResolution*2, settings.biomeColourSettings.biomes.Length, TextureFormat.RGBA32, false);
+        // Update the texture if it's null or if it doesn't contain all of the biomes
+        if (texture == null || texture.height != settings.biomeColourSettings.biomes.Length) {
+            texture = new Texture2D(textureResolution * 2, settings.biomeColourSettings.biomes.Length, TextureFormat.RGBA32, false);
         }
         biomeNoiseFilter = NoiseFilterFactory.CreateNoiseFilter(settings.biomeColourSettings.noise);
     }
@@ -24,14 +22,19 @@ public class ColourGenerator {
         settings.planetMaterial.SetVector("_elevationMinMax", new Vector4(elevationMinMax.Min, elevationMinMax.Max));
     }
 
+    /// <summary>
+    /// Returns a value between 0 and 1, where 0 is the first biome and 1 is the last biome.
+    /// </summary>
+    /// <param name="pointOnUnitSphere">The point on the sphere to calculate the biome percent from</param>
     public float BiomePercentFromPoint(Vector3 pointOnUnitSphere)
     {
         float heightPercent = (pointOnUnitSphere.y + 1) / 2f;
-        heightPercent +=
-            (biomeNoiseFilter.Evaluate(pointOnUnitSphere)-settings.biomeColourSettings.noiseOffset)*settings.biomeColourSettings.noiseStrength;
-        float biomeIndex = 0;
+        float biomeNoise = biomeNoiseFilter.Evaluate(pointOnUnitSphere) - settings.biomeColourSettings.noiseOffset;
+        heightPercent += biomeNoise *settings.biomeColourSettings.noiseStrength;
+
+        float biomeIndex = 0f;
         int numBiomes = settings.biomeColourSettings.biomes.Length;
-        float blendRange = settings.biomeColourSettings.blendAmount / 2f + .001f;
+        float blendRange = settings.biomeColourSettings.blendAmount / 2f + .001f; // Add a small value so there is always some blend
 
         for (int i = 0; i < numBiomes; i++)
         {
@@ -41,9 +44,13 @@ public class ColourGenerator {
             biomeIndex += i * weight;
         }
 
-        return biomeIndex / Mathf.Max(1, (numBiomes - 1)); // Mathf.Max to prevent dividing by 0
+        // Mathf.Max prevents dividing by 0
+        return biomeIndex / Mathf.Max(1, (numBiomes - 1));
     }
 
+    /// <summary>
+    /// Generates a 2D Texture with the gradient colours of the ocean in the first half and biomes in the second half
+    /// </summary>
     public void UpdateColours()
     {
         Color[] colours = new Color[texture.width * texture.height];
