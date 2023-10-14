@@ -1,14 +1,11 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MissileWarning : MonoBehaviour
-{
+public class MissileWarning : MonoBehaviour {
+
     [Header("Flashing effect")]
     [SerializeField] private float showDuration = .2f;
     [SerializeField] private float hideDuration = .1f;
-    private float showTimer = 0f;
-    private float hideTimer = 0f;
 
     [Header("References")]
     [SerializeField] private GameObject missileWarningObject;
@@ -16,6 +13,8 @@ public class MissileWarning : MonoBehaviour
 
     private List<Missile> incomingMissiles;
     private bool warningActive;
+    private float showTimer = 0f;
+    private float hideTimer = 0f;
 
     private void Start()
     {

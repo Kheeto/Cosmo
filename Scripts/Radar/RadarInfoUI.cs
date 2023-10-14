@@ -1,11 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public class RadarInfoUI : MonoBehaviour
-{
+public class RadarInfoUI : MonoBehaviour {
+
     [Header("Radar Lock")]
     [SerializeField] private Color normalColor;
     [SerializeField] private Color lockColor;
@@ -15,22 +13,22 @@ public class RadarInfoUI : MonoBehaviour
     [SerializeField] private TMP_Text radarText;
     [SerializeField] private RawImage radarIcon;
 
-    private bool isLockedOn = false;
-
     private void Update()
     {
+        // Remove this UI element if the radar ping no longer exists on the radar
         if (!radarPing || !radarPing.GetOwner())
             Destroy(gameObject);
 
         UpdatePosition();
         UpdateUI();
-        // TODO add aim prediction
     }
 
+    /// <summary>
+    /// Update the UI element's position on screen
+    /// </summary>
     private void UpdatePosition()
     {
-        if (!radarPing || !radarPing.GetOwner())
-            return;
+        if (!radarPing || !radarPing.GetOwner()) return;
 
         Vector3 targPos = radarPing.GetOwner().transform.position;
         Vector3 camForward = Camera.main.transform.forward;
@@ -45,6 +43,9 @@ public class RadarInfoUI : MonoBehaviour
         transform.position = RectTransformUtility.WorldToScreenPoint(Camera.main, targPos);
     }
 
+    /// <summary>
+    /// Update the UI text
+    /// </summary>
     private void UpdateUI()
     {
         if (!radarPing || !radarPing.GetOwner())
@@ -56,17 +57,18 @@ public class RadarInfoUI : MonoBehaviour
         radarText.text = radarPing.GetOwner().transform.parent.name + "\n" + kmDistance.ToString("0.00") + "km";
     }
 
+    /// <summary>
+    /// Update the color of this UI element based on its lock state
+    /// </summary>
     public void UpdateLockState(bool state)
     {
         if (state)
         {
-            isLockedOn = true;
             radarIcon.color = lockColor;
             radarText.color = lockColor;
         }
         else
         {
-            isLockedOn = false;
             radarIcon.color = normalColor;
             radarText.color = normalColor;
         }

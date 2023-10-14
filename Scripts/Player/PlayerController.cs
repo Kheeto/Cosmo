@@ -1,21 +1,20 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour
-{
+public class PlayerController : MonoBehaviour {
+
     [Header("Movement")]
-    [SerializeField] private float MovementSpeed = 5f;
-    [SerializeField] private Transform Orientation;
+    [SerializeField] private float movementSpeed = 5f;
 
     [Header("Jump")]
-    [SerializeField] private float JumpForce = 2f;
-    [SerializeField] private float PlayerHeight = 2f;
-    [SerializeField] private LayerMask GroundMask;
-    public bool grounded;
+    [SerializeField] private float jumpForce = 2f;
+    [SerializeField] private float playerHeight = 2f;
+    [SerializeField] private LayerMask whatIsGround;
+
+    [Header("References")]
+    [SerializeField] private Transform orientation;
 
     private Rigidbody rb;
-    private Vector3 moveDirection;
+    private bool grounded;
 
     private void Awake()
     {
@@ -26,41 +25,39 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        // Ground check
-        grounded = Physics.Raycast(transform.position, -transform.up, PlayerHeight * 0.5f + 0.2f, GroundMask);
+        // Check if the player is grounded by shooting a raycast down
+        grounded = Physics.Raycast(transform.position, -transform.up, playerHeight * 0.5f + 0.2f, whatIsGround);
 
-        Movement();
-        Jump();
+        HandleMovement();
+        HandleJump();
         RotateToGravity();
     }
 
-    private void Movement()
+    private void HandleMovement()
     {
-        // Get the movement input
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
 
-        // Move the player
-        moveDirection = Orientation.forward * verticalInput + Orientation.right * horizontalInput;
-        rb.AddForce(moveDirection.normalized * MovementSpeed, ForceMode.Force);
+        Vector3 moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
+        rb.AddForce(moveDirection.normalized * movementSpeed, ForceMode.Force);
     }
 
-    private void Jump()
+    private void HandleJump()
     {
         if (Input.GetKey(KeyCode.Space) && grounded)
         {
-            rb.AddRelativeForce(Vector3.up * JumpForce);
+            rb.AddRelativeForce(Vector3.up * jumpForce);
         }
     }
 
     /// <summary>
-    /// Rotates the Player relatively to the planet he is closest to, so he always appears standing perpendicularly to the planet's surface.
+    /// Rotates the Player relatively to the strongest gravitational pull, so he always appears standing perpendicularly to the planet's surface.
     /// </summary>
     private void RotateToGravity()
     {
         Vector3 strongestGravitationalPull = Vector3.zero;
 
-        // Find the strongest pull
+        // Loop through all gravitational objects and find the strongest pull
         foreach (GravitationalObject obj in GravitationalObject.Objects)
         {
             float distanceSqr = (obj.transform.position - rb.position).sqrMagnitude;

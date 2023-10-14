@@ -1,19 +1,15 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class Cannon : MonoBehaviour
-{
-    [Header("Gun settings")]
+public class Cannon : MonoBehaviour {
+
+    [Header("Settings")]
     [SerializeField] private float damage;
-    [SerializeField] private float penetration;
     [SerializeField] private float range;
     [SerializeField] private float fireRate; // shots per second
     [SerializeField] private LayerMask objectMask;
 
     [Header("Ammo")]
-    [SerializeField] private AmmoType type;
     [SerializeField] private int maxAmmo;
     [SerializeField] private float reloadSpeed;
     [SerializeField] private float reloadDelay;
@@ -31,11 +27,9 @@ public class Cannon : MonoBehaviour
     [SerializeField] private AmmoText ammoText;
     [SerializeField] private Color normalColor;
     [SerializeField] private Color overheatColor;
-    private float ammoBarHeight;
 
     [Header("Audio")]
     [SerializeField] private GameObject soundPrefab;
-
 
     private float currentReloadDelay;
     private float currentOverheatTime;
@@ -45,15 +39,9 @@ public class Cannon : MonoBehaviour
     private bool isShooting;
     private bool shouldShoot;
     private bool overheated;
+    private float ammoBarHeight;
 
-    private enum AmmoType
-    {
-        Laser,
-        Ballistic,
-        HighExplosive
-    }
-
-    private void Start()
+    private void Awake()
     {
         currentAmmo = maxAmmo;
         currentReloadDelay = 0f;
@@ -63,7 +51,6 @@ public class Cannon : MonoBehaviour
         isShooting = false;
         shouldShoot = false;
         overheated = false;
-
         if (enableCannonUI) ammoBarHeight = ammoBarUI.rectTransform.rect.height;
     }
 
@@ -81,7 +68,7 @@ public class Cannon : MonoBehaviour
             return;
         }
         if (overheated) return;
-        if (currentAmmo < 1) return; // need ammo to reload
+        if (currentAmmo < 1) return;
         if (!canShoot) return;
         Debug.Log("shot");
 
@@ -134,11 +121,8 @@ public class Cannon : MonoBehaviour
         }
     }
 
-    private float lerp;
     private void Reload()
     {
-        // Ballistic and High Explosive guns don't reload
-        if (type != AmmoType.Laser) return;
         if (overheated) return; // can't reload while overheated
 
         if (!isShooting && currentReloadDelay < reloadDelay) currentReloadDelay += Time.deltaTime;
@@ -147,13 +131,9 @@ public class Cannon : MonoBehaviour
         // can reload
         if (currentReloadDelay >= reloadDelay)
         {
-            //int ammo = Mathf.RoundToInt(Mathf.Lerp(currentAmmo, maxAmmo, reloadSpeed * Time.deltaTime));
             currentAmmo = Mathf.Lerp(currentAmmo, maxAmmo, Time.deltaTime / reloadSpeed);
-
             UpdateUI();
         }
-        else
-            lerp = 0f;
     }
 
     private void ResetShooting()

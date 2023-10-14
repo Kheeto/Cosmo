@@ -1,10 +1,9 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EnemyController : MonoBehaviour
-{
-    [Header("Movement")]
+public class EnemyController : MonoBehaviour {
+
+    [Header("Handling")]
     [Range(0, 100)]
     [SerializeField] private float throttle = 0f;
     [SerializeField] private float thrust = 500f;
@@ -20,10 +19,6 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private float boosterDuration = 10f;
     [SerializeField] private float timeBeforeReload = 1.5f;
     [SerializeField] private float reloadRate = 1f;
-    private float boosterTimer = 0f;
-    private float timeBeforeReloadTimer = 0f;
-    private bool usingBooster;
-    private bool wasUsingBooster;
 
     [Header("Combat")]
     [SerializeField] private Radar radar;
@@ -46,10 +41,12 @@ public class EnemyController : MonoBehaviour
     private List<Missile> incomingMissiles;
     private float dropTimer;
 
-    private Vector3 movementDirection;
-    private Vector3 currentSpeed;
     private Rigidbody rb;
     private GameObject player;
+    private float boosterTimer = 0f;
+    private float timeBeforeReloadTimer = 0f;
+    private bool usingBooster;
+    private bool wasUsingBooster;
 
     private void Start()
     {

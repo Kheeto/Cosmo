@@ -1,35 +1,34 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Missile : MonoBehaviour
-{
-    [Header("Missile Settings")]
+public class Missile : MonoBehaviour {
+
+    [Header("Handling")]
     [SerializeField] private bool engineOn = false;
     [SerializeField] private float thrust = 350f;
     [SerializeField] private float turnRate = 250f;
     [SerializeField] private float maxGForce = 30f;
-    [SerializeField] private AnimationCurve damageCurve;
-    [SerializeField] private float range;
+
+    [Header("Guidance")]
+    [SerializeField] private float range = 2000f;
+    [SerializeField] private Radar radar;
+
+    [Header("Prediction")]
+    [SerializeField] private bool enablePrediction = true;
+    [SerializeField] private float minPredictionDistance = 0f;
+    [SerializeField] private float maxPredictionTime = 1f;
 
     [Header("Explosion")]
     [SerializeField] private float explosionForce = 10f;
     [SerializeField] private float explosionRadius = 5f;
+    [SerializeField] private AnimationCurve damageCurve;
 
-    [Header("Missile Launch")]
-    [SerializeField] private Vector3 separationForce;
+    [Header("Launch")]
+    [SerializeField] private Vector3 separationForce = Vector3.zero;
     [SerializeField] private float engineStartDelay = 1f;
     [SerializeField] private float turnDelay = 1f;
     private float engineStartTimer = 0f;
     private float turnTimer = 0f;
-
-    [Header("Radar Guidance")]
-    [SerializeField] private Radar radar;
-    private bool radarTargetFound;
-
-    [Header("Prediction")]
-    [SerializeField] private bool enablePrediction = true;
-    [SerializeField] private float minPredictionDistance;
-    [SerializeField] private float maxPredictionTime;
 
     [Header("References")]
     [SerializeField] private Rigidbody target;
@@ -39,51 +38,28 @@ public class Missile : MonoBehaviour
     [SerializeField] private AmmoText ammoText;
     [SerializeField] private MissileWarning missileWarning;
 
-    private float targetLostTime;
-    private Vector3 prediction;
-    private float leadTimePercentage;
+    // Calculating G Force
     private Vector3 lastVelocity;
-    public float currentGForce;
+    private float currentGForce;
 
-    public bool wasLaunched = false;
+    public bool wasLaunched { get; private set; }  = false;
 
-    private void Start()
+    private void Awake()
     {
         if (rb == null) rb = GetComponent<Rigidbody>();
     }
 
     private void Update()
     {
-        float leadTimePercentage = 0f;
-        if (target != null)
-        {
-            // If target is too far away, the missile will stop tracking
-            if (Vector3.Distance(rb.position, target.position) > range) SetTarget(null);
+        HandleMissile();
 
-            // Percentage of the distance where 0 is the minPredictionDistance and 1 is the maxMissileDistance
-            // If Distance < minPredictionDistance, the missile will directly follow the target, and not the prediction
-            leadTimePercentage = Mathf.InverseLerp(minPredictionDistance, range,
-                Vector3.Distance(transform.position, target.position));
-        }
-
-        PredictMovement(leadTimePercentage);
-        RotateMissile();
-
-        CheckForRadarTarget();
-
+        // Handle timer delays
         if (wasLaunched && engineStartTimer < engineStartDelay)
-        {
             engineStartTimer += Time.deltaTime;
-            engineOn = false;
-        }
         else if (wasLaunched && engineStartTimer >= engineStartDelay)
             engineOn = true;
-
         if (wasLaunched && turnTimer < turnDelay)
             turnTimer += Time.deltaTime;
-
-        if (engineOn && particleEffects)
-            particleEffects.SetActive(true);
     }
 
     private void FixedUpdate()
@@ -91,8 +67,69 @@ public class Missile : MonoBehaviour
         if(engineOn) rb.AddForce(transform.forward * thrust);
 
         currentGForce = CalculateGForce(rb, lastVelocity);
-
         lastVelocity = rb.velocity;
+    }
+
+    /// <summary>
+    /// Rotates the missile towards the next target's predicted position
+    /// </summary>
+    private void HandleMissile()
+    {
+        if (!engineOn) return;
+        if (turnTimer < turnDelay) return;
+
+        Vector3 prediction = PredictMovement(GetDistancePercentage());
+        Vector3 heading = prediction - transform.position;
+        Quaternion rotation = Quaternion.LookRotation(heading);
+
+        if (currentGForce < maxGForce)
+            rb.MoveRotation(Quaternion.RotateTowards(rb.rotation, rotation, turnRate * Time.deltaTime));
+    }
+
+    /// <summary>
+    /// Predicts the movement of the target based on its current position and velocity
+    /// </summary>
+    /// <param name="predictionTimePercentage">How far to predict into the future between 0 and 1</param>
+    private Vector3 PredictMovement(float predictionTimePercentage)
+    {
+        if (target == null) return transform.position;
+        if (!IsTargetVisibleOnRadar()) return transform.position;
+        if (!enablePrediction) return target.position;
+
+        // Calculate the next target's position based on its velocity and the predictionTimePercentage
+        float predictionTime = Mathf.Lerp(0, maxPredictionTime, predictionTimePercentage);
+        return target.position + target.velocity * predictionTime;
+    }
+
+    /// <summary>
+    /// Returns a value between 0 and 1 where 0 is the minPredictionDistance and 1 is the range of this missile.
+    /// </summary>
+    private float GetDistancePercentage()
+    {
+        if (target == null) return 0f;
+
+        float distance = Vector3.Distance(transform.position, target.position);
+
+        // If target is too far away, the missile will stop tracking
+        if (distance > range) SetTarget(null);
+
+        return Mathf.InverseLerp(minPredictionDistance, range, distance);
+    }
+
+    /// <summary>
+    /// Loops through the radar pings and checks if the current target is one of them
+    /// </summary>
+    private bool IsTargetVisibleOnRadar()
+    {
+        List<RadarPing> radarTargets = radar.GetRadarPings();
+
+        bool radarTargetFound = false;
+        foreach (RadarPing rp in radarTargets)
+        {
+            if (rp.GetOwner() == null) continue;
+            if (rp.GetOwner().gameObject.GetComponentInParent<Rigidbody>() == target) radarTargetFound = true;
+        }
+        return radarTargetFound;
     }
 
     /// <summary>
@@ -107,102 +144,11 @@ public class Missile : MonoBehaviour
         return Gforce;
     }
 
-    private void PredictMovement(float leadTimePercentage)
+    /// <summary>
+    /// Launches the missile with an inital velocity and angularVelocity
+    /// </summary>
+    public void Launch(Vector3 initialVelocity, Vector3 angularVelocity)
     {
-        if (target == null) return;
-        if (!enablePrediction)
-        {
-            prediction = target.position;
-            return;
-        }
-
-        // If target isn't visible, can't predict movement
-        if (!radarTargetFound) return;
-
-        float predictionTime = Mathf.Lerp(0, maxPredictionTime, leadTimePercentage);
-        prediction = target.position + target.velocity * predictionTime;
-    }
-
-    private void RotateMissile()
-    {
-        if (!engineOn) return;
-        if (turnTimer < turnDelay) return;
-
-        Vector3 heading = prediction - transform.position;
-        Quaternion rotation = Quaternion.LookRotation(heading);
-
-        if (currentGForce < maxGForce)
-            rb.MoveRotation(Quaternion.RotateTowards(rb.rotation, rotation, turnRate * Time.deltaTime));
-    }
-
-    private void CheckForRadarTarget()
-    {
-        List<RadarPing> radarTargets = radar.GetRadarPings();
-
-        radarTargetFound = false;
-        foreach (RadarPing rp in radarTargets)
-        {
-            if (rp.GetOwner() == null) continue;
-            if (rp.GetOwner().gameObject.GetComponentInParent<Rigidbody>() == target) radarTargetFound = true;
-        }
-    }
-
-    bool alreadyExploded;
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (!wasLaunched) return;
-        if (!engineOn) return;
-
-        alreadyExploded = false;
-        if (alreadyExploded) return;
-        alreadyExploded = true;
-
-        // Damages every object in explosion radius
-        Collider[] colliders = Physics.OverlapSphere(rb.position, explosionRadius);
-        foreach(Collider c in colliders)
-        {
-            ShipModule m = c.gameObject.GetComponent<ShipModule>();
-            if (m != null)
-            {
-                float distance = Vector3.Distance(rb.position, c.gameObject.transform.position);
-
-                if (m.GetComponentInParent<ShipCombat>())
-                    m.GetComponentInParent<ShipCombat>().Damage(m, damageCurve.Evaluate(distance));
-                else if (m.GetComponentInParent<EnemyController>())
-                    m.GetComponentInParent<EnemyController>().Damage(m, damageCurve.Evaluate(distance));
-            }
-
-            Rigidbody r = c.gameObject.GetComponent<Rigidbody>();
-            if (r != null)
-            {
-                r.AddExplosionForce(explosionForce, transform.position, explosionRadius, 0f, ForceMode.Impulse);
-            }
-        }
-        
-        if (explosionPrefab)
-            Instantiate(explosionPrefab, transform.position, Quaternion.identity);
-        Destroy(gameObject);
-    }
-
-    private void OnDrawGizmos()
-    {
-        if (target == null) return;
-
-        Gizmos.color = Color.red;
-        Gizmos.DrawLine(rb.position, prediction);
-
-        Gizmos.color = Color.blue;
-        Gizmos.DrawLine(target.position, prediction);
-
-        Gizmos.color = Color.green;
-        Gizmos.DrawLine(rb.position, target.position);
-    }
-
-    public void SetTarget(Rigidbody rb) { target = rb; }
-
-    public Rigidbody GetTarget() { return target; }
-
-    public void Launch(Vector3 initialVelocity, Vector3 angularVelocity) {
         rb.isKinematic = false;
         rb.velocity = initialVelocity;
         rb.angularVelocity = angularVelocity;
@@ -212,9 +158,47 @@ public class Missile : MonoBehaviour
 
         if (ammoText != null) ammoText.UpdateAmmoText();
         if (missileWarning != null) missileWarning.AddMissile(this);
+        particleEffects.SetActive(true);
 
         EnemyController enemy = target.gameObject.GetComponent<EnemyController>();
         if (enemy != null)
             enemy.AddMissile(this);
     }
+
+    bool alreadyExploded;
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (!engineOn) return;
+
+        // Prevents clipping of multiple OnCollisionEnter calls
+        alreadyExploded = false;
+        if (alreadyExploded) return;
+        alreadyExploded = true;
+
+        // Damages every object in explosion radius
+        foreach(Collider c in Physics.OverlapSphere(rb.position, explosionRadius))
+        {
+            ShipModule m = c.GetComponent<ShipModule>();
+            if (m != null)
+            {
+                float distance = Vector3.Distance(rb.position, c.transform.position);
+
+                if (m.GetComponentInParent<ShipCombat>())
+                    m.GetComponentInParent<ShipCombat>().Damage(m, damageCurve.Evaluate(distance));
+                else if (m.GetComponentInParent<EnemyController>())
+                    m.GetComponentInParent<EnemyController>().Damage(m, damageCurve.Evaluate(distance));
+            }
+            Rigidbody r = c.GetComponent<Rigidbody>();
+            if (r != null)
+                r.AddExplosionForce(explosionForce, transform.position, explosionRadius, 0f, ForceMode.Impulse);
+        }
+
+        if (explosionPrefab)
+            Instantiate(explosionPrefab, transform.position, Quaternion.identity);
+        Destroy(gameObject);
+    }
+
+    public void SetTarget(Rigidbody rb) { target = rb; }
+
+    public Rigidbody GetTarget() { return target; }
 }

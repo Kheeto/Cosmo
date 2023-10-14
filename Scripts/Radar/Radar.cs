@@ -2,11 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Radar : MonoBehaviour
-{
+public class Radar : MonoBehaviour {
+
     [Header("Settings")]
-    [SerializeField] private bool enableRadarUI = false;
-    [SerializeField] private RadarMode mode = RadarMode.Continuous;
     [SerializeField] private LayerMask objectMask;
     [SerializeField] private LayerMask targetMask;
     [SerializeField] private float radarRotateSpeed = 10f; // rpm
@@ -24,13 +22,15 @@ public class Radar : MonoBehaviour
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Transform radarOrientation;
 
-    [Header("Radar UI")]
+    [Header("UI")]
+    [SerializeField] private bool enableRadarUI = false;
     [SerializeField] private GameObject pingPrefab;
     [SerializeField] private GameObject radarUI;
     [SerializeField] private GameObject radarSweep;
     [SerializeField] private Transform radarInfoHolder;
     [SerializeField] private RadarInfoUI radarInfoElement;
 
+    [Space(15)]
     [SerializeField] private List<Collider> objectList;
     [SerializeField] private List<RadarPing> pingList;
     [SerializeField] private List<RadarInfoUI> infoList;
@@ -40,11 +40,6 @@ public class Radar : MonoBehaviour
 
     private float previousRotation;
     private float currentRotation;
-    private enum RadarMode
-    {
-        Continuous,
-        Advanced
-    }
 
     private void Awake()
     {
@@ -60,6 +55,9 @@ public class Radar : MonoBehaviour
         HandleTargetLock();
     }
 
+    /// <summary>
+    /// Rotates the radar orientation
+    /// </summary>
     private void RotateRadar()
     {
         previousRotation = radarOrientation.eulerAngles.y / 360f;
@@ -70,8 +68,7 @@ public class Radar : MonoBehaviour
         currentRotation = radarOrientation.eulerAngles.y / 360f;
 
         // completed a rotation, clears radar
-        if (mode == RadarMode.Continuous && previousRotation <= 1
-            && previousRotation > currentRotation && currentRotation > 0)
+        if (previousRotation <= 1 && previousRotation > currentRotation && currentRotation > 0)
         {
             objectList.Clear();
         }
@@ -80,6 +77,9 @@ public class Radar : MonoBehaviour
         if (enableRadarUI && radarUI != null) radarUI.transform.eulerAngles = new Vector3(0f, 0f, transform.eulerAngles.y);
     }
 
+    /// <summary>
+    /// Scans for objects by shooting a conecast towards the radar orientation
+    /// </summary>
     private void HandleRadar()
     {
         RaycastHit[] hits = ConeCastAll(radarOrientation.position, castRadius,
@@ -88,18 +88,19 @@ public class Radar : MonoBehaviour
         {
             if (hit.collider.gameObject.GetComponentInParent<Rigidbody>() == rb) continue;
 
+            // When an object is hit for the first time, add it to the object list
             if (!objectList.Contains(hit.collider))
             {
-                // hit object for the first time
                 objectList.Add(hit.collider);
 
                 if (!enableRadarUI) continue;
 
-                // calculates ping position
+                // Calculates ping position in the UI
                 Vector3 hitPointFromRadar = -(radarOrientation.position - hit.point);
                 Vector3 positionOnRadar = new Vector3(hitPointFromRadar.x / radarRange * backgroundWidth,
                     hitPointFromRadar.z / radarRange * backgroundWidth, 0f);
 
+                // Creates a ping in the appriopriate position
                 GameObject ping = Instantiate(pingPrefab, positionOnRadar,
                     Quaternion.Euler(0f,0f,0f));
                 ping.transform.SetParent(radarUI.transform, false);
@@ -107,86 +108,45 @@ public class Radar : MonoBehaviour
                 RadarPing rp = ping.GetComponent<RadarPing>();
                 pingList.Add(rp);
 
-                if (mode == RadarMode.Continuous)
-                {
-                    float duration = 360f / (6 * radarRotateSpeed);
+                float duration = 360f / (6 * radarRotateSpeed);
 
-                    rp.EnableTimer(true);
-                    rp.SetTimer(duration);
-                    StartCoroutine(RemovePing(rp, duration));
-                }
+                rp.EnableTimer(true);
+                rp.SetTimer(duration);
+                StartCoroutine(RemovePing(rp, duration));
 
                 rp.SetOwner(hit.collider);
                 rp.SetRadar(this);
 
                 UpdateRadarInfoUI();
             }
-            else
-            {
-                if (!enableRadarUI) continue;
-
-                // only works on advanced mode, continuous mode doesn't need to update pings since it creates new ones each time
-                if (mode != RadarMode.Advanced) continue;
-
-                // object already seen before, updates its position
-                // checks each ping and finds the one owned by the collider that the raycast has hit
-                foreach (RadarPing p in pingList)
-                {
-                    if (p.GetOwner() == hit.collider)
-                    {
-                        Vector3 hitPointFromRadar = -(radarOrientation.position - hit.point);
-                        Vector3 positionOnRadar = new Vector3(hitPointFromRadar.x / radarRange * backgroundWidth,
-                            hitPointFromRadar.z / radarRange * backgroundWidth, 0f);
-
-                        p.transform.position = radarUI.transform.position + positionOnRadar;
-                    }
-                }
-            }
         }
-
-        // only works on advanced mode, continuous mode doesn't need to update pings since it creates new ones each time
-        if (mode != RadarMode.Advanced) return;
-
-        // Checks if an object on the radar is too far away or doesn't exist anymore, if so deletes the ping
-        for (int i = 0; i < pingList.Count; i++)
-        {
-            RadarPing p = pingList[i];
-            if (p == null) continue;
-
-            Collider c = p.GetOwner();
-            if (c == null || Vector3.Distance(radarOrientation.position, c.transform.position) > radarRange)
-            {
-                pingList.Remove(p);
-                Destroy(p.gameObject);
-                if (c != null) objectList.Remove(c);
-            }
-        }
-
-        UpdateRadarInfoUI();
     }
 
+    /// <summary>
+    /// Locks on the closest target when a key is pressed
+    /// </summary>
     private void HandleTargetLock()
     {
         if (Input.GetKeyDown(radarLockKey))
         {
-            Rigidbody closest = null;
+            Rigidbody closestTarget = null;
             float minDistance = Mathf.Infinity;
 
             foreach (RadarPing ping in pingList)
             {
-                Rigidbody hrb = ping.GetOwner().GetComponentInParent<Rigidbody>();
-                if (hrb == null) return;
+                Rigidbody target = ping.GetOwner().GetComponentInParent<Rigidbody>();
+                if (target == null) return;
 
-                float dist = Vector3.Distance(transform.position, hrb.position);
+                float distance = Vector3.Distance(transform.position, target.position);
 
-                if (dist < minDistance)
+                if (distance < minDistance)
                 {
-                    closest = hrb;
-                    minDistance = dist;
+                    closestTarget = target;
+                    minDistance = distance;
                 }
             }
 
-            if (closest != null) lockedOn = closest;
+            if (closestTarget != null) lockedOn = closestTarget;
         }
     }
 
@@ -208,19 +168,23 @@ public class Radar : MonoBehaviour
     }
 
     /// <summary>
+    /// Returns the target the radar is currently locked on
+    /// </summary>
+    public Rigidbody GetTarget() { return lockedOn; }
+
+    /// <summary>
     /// Creates and updates Radar UI objects while deleting the old ones.
     /// </summary>
     public void UpdateRadarInfoUI()
     {
-        // Makes sure every radar ping has an info ui object
+        // If a radar ping doesn't have an UI object, create it
         foreach (RadarPing ping in pingList)
         {
             bool found = false;
-
             foreach (RadarInfoUI info in infoList)
                 if (ping == info.GetPing()) found = true;
 
-            if (!found)
+            if (!found) // If no UI object is linked to this radar ping
             {
                 RadarInfoUI newInfoObject = Instantiate(radarInfoElement).gameObject.GetComponent<RadarInfoUI>();
                 newInfoObject.transform.SetParent(radarInfoHolder);
@@ -264,11 +228,6 @@ public class Radar : MonoBehaviour
             if (info.gameObject) Destroy(info.gameObject);
         }
     }
-
-    /// <summary>
-    /// Returns the target the radar is currently locked on.
-    /// </summary>
-    public Rigidbody GetTarget() { return lockedOn; }
 
     /// <summary>
     /// Returns all the hits the cone intersects by using a SphereCast and cutting out the hits that exceed the maximum angle

@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -7,8 +6,8 @@ using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class MenuManager : MonoBehaviour
-{
+public class MenuManager : MonoBehaviour {
+
     [Header("Graphics Settings")]
     [SerializeField] private UniversalRenderPipelineAsset graphicsHigh;
     [SerializeField] private UniversalRenderPipelineAsset graphicsLow;

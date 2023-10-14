@@ -1,10 +1,9 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-public class AmmoText : MonoBehaviour
-{
+public class AmmoText : MonoBehaviour {
+
     [SerializeField] private List<Missile> missiles = new List<Missile>();
     [SerializeField] private List<Cannon> cannons = new List<Cannon>();
 

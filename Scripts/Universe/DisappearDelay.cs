@@ -1,9 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class DisappearDelay : MonoBehaviour
-{
+public class DisappearDelay : MonoBehaviour {
+
     [SerializeField] private float duration;
 
     private void OnEnable()
@@ -12,7 +10,7 @@ public class DisappearDelay : MonoBehaviour
     }
 
     /// <summary>
-    /// Destroys the gameobject object after a certain duration.
+    /// Destroys the gameobject object after the specified delay.
     /// </summary>
     private void Disappear()
     {

@@ -9,15 +9,15 @@ public enum ModuleStatus
     Failure
 }
 
-public class ShipModule : MonoBehaviour
-{
-    [Header("Module Settings")]
+public class ShipModule : MonoBehaviour {
+
+    [Header("Health")]
     [SerializeField] private float maxHealth;
     [SerializeField] private float currentHealth;
     [SerializeField] private ModuleStatus status;
     [SerializeField] private short repairsLeft = -1;
 
-    [Header("Module Damage")]
+    [Header("Damage levels")]
     [SerializeField] private float unstableHealth;
     [SerializeField] private float criticalHealth;
     [SerializeField] private float failureHealth;
@@ -29,11 +29,23 @@ public class ShipModule : MonoBehaviour
     [SerializeField] private Color criticalColor = Color.red;
     [SerializeField] private Color failureColor = Color.gray;
 
-    private void Awake()
+    /// <summary>
+    /// Fully restores the module's health and status
+    /// </summary>
+    public void Repair()
     {
-        Repair();
+        if (repairsLeft == 0) return;
+
+        currentHealth = maxHealth;
+        status = ModuleStatus.Normal;
+        UpdateUI();
+
+        repairsLeft--;
     }
 
+    /// <summary>
+    /// Damages this module and updates its status
+    /// </summary>
     public void Damage(float damage)
     {
         currentHealth -= damage;
@@ -47,7 +59,10 @@ public class ShipModule : MonoBehaviour
         UpdateUI();
     }
 
-    public void Heal(short healAmount)
+    /// <summary>
+    /// Heals this module and updates its status
+    /// </summary>
+    public void Heal(float healAmount)
     {
         currentHealth += healAmount;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
@@ -60,17 +75,9 @@ public class ShipModule : MonoBehaviour
         UpdateUI();
     }
 
-    public void Repair()
-    {
-        if (repairsLeft == 0) return;
-
-        currentHealth = maxHealth;
-        status = ModuleStatus.Normal;
-        UpdateUI();
-
-        repairsLeft--;
-    }
-
+    /// <summary>
+    /// Updates the module's color in the UI based on its current status
+    /// </summary>
     private void UpdateUI()
     {
         switch(status)

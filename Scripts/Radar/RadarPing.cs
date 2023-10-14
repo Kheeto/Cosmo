@@ -1,9 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class RadarPing : MonoBehaviour
-{
+public class RadarPing : MonoBehaviour {
+
     [Header("References")]
     [SerializeField] private Radar radar;
     [SerializeField] private Collider owner;

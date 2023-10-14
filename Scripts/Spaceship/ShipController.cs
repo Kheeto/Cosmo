@@ -1,25 +1,17 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using UnityEngine.Rendering.Universal;
-using UnityEngine.Rendering;
 
-public class ShipController : MonoBehaviour
-{
-    [Header("Flight Settings")]
+public class ShipController : MonoBehaviour {
+
+    [Header("Handling")]
     [SerializeField] private bool engineOn;
     [Range(0, 100)]
     [SerializeField] private float throttle = 0f;
-    [SerializeField] private float throttleSensivity = 10f;
     [SerializeField] private float thrust = 500f;
-    [SerializeField] private float thrustAcceleration = 5f;
     [SerializeField] private float rollSpeed = 90f;
     [SerializeField] private float pitchSpeed = 90f;
     [SerializeField] private float yawSpeed = 60f;
-    [SerializeField] private float acceleration = 4.5f;
-    private float currentThrust = 0f;
 
     [Header("Autopilot")]
     [SerializeField] private float sensitivity = 5f;
@@ -30,63 +22,53 @@ public class ShipController : MonoBehaviour
     [SerializeField] private float boosterDuration = 10f;
     [SerializeField] private float timeBeforeReload = 1.5f;
     [SerializeField] private float reloadRate = 1f;
-    private float boosterTimer = 0f;
-    private float timeBeforeReloadTimer = 0f;
-    private bool usingBooster;
-    private bool wasUsingBooster;
 
-    [Header("Look")]
-    [SerializeField] private float lookSpeed = 360f;
+    [Header("Input")]
+    [SerializeField] private KeyCode engineKey = KeyCode.I;
+    [SerializeField] private KeyCode boosterKey = KeyCode.LeftShift;
+    [SerializeField] private float throttleSensivity = 10f;
+
+    [Header("References")]
+    [SerializeField] private MouseFlight controller;
 
     [Header("UI")]
     [SerializeField] private RawImage boosterBar;
     [SerializeField] private RawImage throttleBar;
     [SerializeField] private TMP_Text throttleText;
     [SerializeField] private TMP_Text infoText;
-    private float throttleBarHeight;
-    private float boosterBarHeight;
-
-    [Header("Keybinding")]
-    [SerializeField] private KeyCode engineKey = KeyCode.I;
-    [SerializeField] private KeyCode boosterKey = KeyCode.LeftShift;
-
-    [Header("References")]
-    [SerializeField] private MouseFlight controller;
 
     [Header("Input")]
-    [SerializeField] private float forceMult;
-    private float currentForceMult;
-    [SerializeField] [Range(-1f, 1f)] private float pitch = 0f;
-    [SerializeField] [Range(-1f, 1f)] private float yaw = 0f;
-    [SerializeField] [Range(-1f, 1f)] private float roll = 0f;
-    public float Pitch { set { pitch = Mathf.Clamp(value, -1f, 1f); } get { return pitch; } }
-    public float Yaw { set { yaw = Mathf.Clamp(value, -1f, 1f); } get { return yaw; } }
-    public float Roll { set { roll = Mathf.Clamp(value, -1f, 1f); } get { return roll; } }
-
-    public Vector3 movementInput;
-
-    public bool pitchOverride = false;
-    public bool rollOverride = false;
+    [SerializeField] private float forceMultiplier;
 
     [Header("G Force")]
-    [SerializeField] private float maxPositiveGForce = 15f;
-    [SerializeField] private float minNegativeGForce = -4f;
-    [SerializeField] private float gForceMovementMultiplier = .2f;
+    [SerializeField] private float maxGForce = 8f;
+    [SerializeField] private float minGForce = -3f;
+    [SerializeField] private float overloadForceMultiplier = .2f;
     [Space(10)]
     [SerializeField] private TMP_Text gMeter;
     [SerializeField] private Color gMeterDefaultColor;
     [SerializeField] private Color gMeterWarningColor;
+
+    // Physics
+    private Rigidbody rb;
     private float currentGForce;
     private Vector3 lastVel;
+    private float currentForceMultiplier;
+    // UI
+    private float throttleBarHeight;
+    private float boosterBarHeight;
+    // Booster timer
+    private float boosterTimer = 0f;
+    private float timeBeforeReloadTimer = 0f;
+    private bool usingBooster;
+    private bool wasUsingBooster;
+    // Input
+    private float pitch = 0f, yaw = 0f, roll = 0f;
 
-    private Rigidbody rb;
-
-    private void Start()
+    private void Awake()
     {
         rb = GetComponent<Rigidbody>();
-
         Cursor.lockState = CursorLockMode.Locked;
-
         throttleBarHeight = throttleBar.rectTransform.rect.height;
         boosterBarHeight = boosterBar.rectTransform.rect.height;
     }
@@ -94,32 +76,30 @@ public class ShipController : MonoBehaviour
     private void Update()
     {
         HandleInput();
-        HandleThrust();
         HandleBooster();
         HandleUI();
-        HandleGForce();
     }
 
     private void FixedUpdate()
     {
         HandleMovement();
-
-        Vector3 acceleration = (rb.velocity - lastVel);
-        currentGForce = acceleration.magnitude / (Time.fixedDeltaTime * Physics.gravity.magnitude);
-
-        lastVel = rb.velocity;
+        CalculateGForce();
     }
 
+    #region Input and Autopilot
+
+    /// <summary>
+    /// Updates the pitch, roll, yaw, throttle, engine and boosters input
+    /// </summary>
     private void HandleInput()
     {
-        rollOverride = false;
-        pitchOverride = false;
+        bool rollOverride = false;
+        bool pitchOverride = false;
 
-        // Movement input
         float Pitch = Input.GetAxis("Vertical");
         float Roll = Input.GetAxis("Horizontal");
 
-        // When the player commands their own stick input,
+        // When the player commands their own input,
         // it should override the autopilot
         if (Mathf.Abs(Pitch) > .25f)
         {
@@ -129,62 +109,57 @@ public class ShipController : MonoBehaviour
         if (Mathf.Abs(Roll) > .25f)
             rollOverride = true;
 
-        // Throttle and engine control
-        float ThrottleInput = Input.GetAxis("Mouse ScrollWheel") * throttleSensivity;
-        throttle = Mathf.Clamp(throttle += ThrottleInput, 0, 100);
+        // Calculate the autopilot inputs.
+        float autoPilotPitch;
+        float autoPilotRoll;
+        float autoPilotYaw;
+
+        RunAutopilot(controller.MouseAimPos, out autoPilotYaw, out autoPilotPitch, out autoPilotRoll);
+
+        pitch = (pitchOverride) ? Pitch : autoPilotPitch;
+        roll = (rollOverride) ? Roll : autoPilotRoll;
+        yaw = autoPilotYaw;
+
+        // Update the throttle input, engine status and boosters
+        float throttleInput = Input.GetAxis("Mouse ScrollWheel") * throttleSensivity;
+        throttle = Mathf.Clamp(throttle += throttleInput, 0, 100);
 
         if (Input.GetKeyDown(engineKey)) engineOn = !engineOn;
 
         if (boosterTimer > 0) usingBooster = Input.GetKey(boosterKey);
         else usingBooster = false;
-
-        // Calculate the autopilot inputs.
-        float autoPitch = 0f;
-        float autoRoll = 0f;
-        float autoYaw = 0f;
-
-        if (controller != null)
-            RunAutopilot(controller.MouseAimPos, out autoYaw, out autoPitch, out autoRoll);
-
-        pitch = (pitchOverride) ? Pitch : autoPitch;
-        roll = (rollOverride) ? Roll : autoRoll;
-        yaw = autoYaw; // (yawOverride) ? Yaw
     }
 
-    // These inputs are created proportionally, so this can be prone to overshooting.
-    // The physics in this example are tweaked so that it's not a big issue,
-    // but using a PID controller for each axis is highly recommended.
+    /// <summary>
+    /// Calculates the yaw, pitch and roll inputs needed to rotate towards the flyTarget
+    /// </summary>
     private void RunAutopilot(Vector3 flyTarget, out float yaw, out float pitch, out float roll)
     {
-        // Converts the fly to position to local space
-        var localFlyTarget = transform.InverseTransformPoint(flyTarget).normalized * sensitivity;
-        var angleOffTarget = Vector3.Angle(transform.forward, flyTarget - transform.position);
+        // Converts the flyTarget position to local space
+        Vector3 localFlyTarget = transform.InverseTransformPoint(flyTarget).normalized * sensitivity;
 
-        // Pitch and Yaw
         yaw = Mathf.Clamp(localFlyTarget.x, -1f, 1f);
         pitch = -Mathf.Clamp(localFlyTarget.y, -1f, 1f);
 
         // There are two different roll commands depending on the situation.
         // If target is off axis, then roll into it, if it's directly in front, fly wings level
+        float aggressiveRoll = Mathf.Clamp(localFlyTarget.x, -1f, 1f);
+        float wingsLevelRoll = transform.right.y;
 
-        // Rolls into the target so that pitching up will put the nose onto the target
-        var agressiveRoll = Mathf.Clamp(localFlyTarget.x, -1f, 1f);
+        // Calculate the angle to the target
+        float angleOffTarget = Vector3.Angle(transform.forward, flyTarget - transform.position);
 
-        // Commands the aircraft to fly wings level.
-        var wingsLevelRoll = transform.right.y;
-
-        // Blend between auto level and banking into the target.
-        var wingsLevelInfluence = Mathf.InverseLerp(0f, aggressiveTurnAngle, angleOffTarget);
-        roll = Mathf.Lerp(wingsLevelRoll, agressiveRoll, wingsLevelInfluence);
+        // Blend between wingsLevel and aggressively rolling into the target.
+        float wingsLevelInfluence = Mathf.InverseLerp(0f, aggressiveTurnAngle, angleOffTarget);
+        roll = Mathf.Lerp(wingsLevelRoll, aggressiveRoll, wingsLevelInfluence);
     }
 
-    private void HandleThrust()
-    {
-        float targetThrust = thrust * (throttle / 100);
-        if (usingBooster) targetThrust += boosterThrust;
-        currentThrust = Mathf.Lerp(currentThrust, targetThrust, thrustAcceleration * Time.deltaTime);
-    }
+    #endregion
+    #region Boosters
 
+    /// <summary>
+    /// Updates the booster timer
+    /// </summary>
     private void HandleBooster()
     {
         if (usingBooster)
@@ -207,16 +182,40 @@ public class ShipController : MonoBehaviour
         }
     }
 
+    #endregion
+    #region Movement
+
+    /// <summary>
+    /// Propulses the spaceship forward and applies the pitch, yaw and roll forces
+    /// </summary>
     private void HandleMovement()
     {
         if (!engineOn) return;
 
         rb.AddRelativeTorque(new Vector3(pitch * pitchSpeed,
-            yaw * yawSpeed, -roll * rollSpeed) * currentForceMult, ForceMode.Force);
+            yaw * yawSpeed, -roll * rollSpeed) * currentForceMultiplier, ForceMode.Force);
 
+        float currentThrust = thrust * (throttle / 100);
+        if (usingBooster) currentThrust += boosterThrust;
         rb.AddForce(transform.forward * currentThrust, ForceMode.Force);
     }
 
+    /// <summary>
+    /// Calculates the current G Force based on the acceleration from the last velocity
+    /// </summary>
+    private void CalculateGForce()
+    {
+        Vector3 acceleration = (rb.velocity - lastVel);
+        currentGForce = acceleration.magnitude / (Time.fixedDeltaTime * Physics.gravity.magnitude);
+        lastVel = rb.velocity;
+    }
+
+    #endregion
+    #region UI
+
+    /// <summary>
+    /// Updates the dimension of the throttle and booster bars, as well as the Speed and G Force indicators
+    /// </summary>
     private void HandleUI()
     {
         throttleBar.rectTransform.sizeDelta = new Vector2(throttleBar.rectTransform.rect.width,
@@ -224,24 +223,23 @@ public class ShipController : MonoBehaviour
         boosterBar.rectTransform.sizeDelta = new Vector2(boosterBar.rectTransform.rect.width,
             boosterBarHeight * boosterTimer / boosterDuration);
 
+        // Throttle and speed indicators
         throttleText.text = Mathf.Round(throttle).ToString() + "%";
         infoText.text = Mathf.Round(rb.velocity.magnitude * 3.6f).ToString() + "km/h\n";
-            //+ Mathf.Round(rb.position.y).ToString() + "m";
-    }
 
-    private void HandleGForce()
-    {
+        // G Force UI
         gMeter.text = currentGForce.ToString("0.00") + " G";
-
-        if (currentGForce > maxPositiveGForce || currentGForce < minNegativeGForce)
+        if (currentGForce > maxGForce || currentGForce < minGForce)
         {
             gMeter.color = gMeterWarningColor;
-            currentForceMult = gForceMovementMultiplier;
+            currentForceMultiplier = overloadForceMultiplier;
         }
         else
         {
             gMeter.color = gMeterDefaultColor;
-            currentForceMult = forceMult;
+            currentForceMultiplier = forceMultiplier;
         }
     }
+
+    #endregion
 }

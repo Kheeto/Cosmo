@@ -1,13 +1,12 @@
-using System;
-using System.Collections;
 using UnityEngine;
 
-public class MouseFlightHUD : MonoBehaviour
-{
+public class MouseFlightHUD : MonoBehaviour {
+
     [Header("References")]
     [SerializeField] private MouseFlight mouseFlight;
     [SerializeField] private RectTransform boresight;
     [SerializeField] private RectTransform mousePos;
+
     private Camera camera;
 
     private void Awake()
@@ -23,6 +22,9 @@ public class MouseFlightHUD : MonoBehaviour
         UpdateGraphics(mouseFlight);
     }
 
+    /// <summary>
+    /// Updates the boresight and mouseAim positions in the HUD
+    /// </summary>
     private void UpdateGraphics(MouseFlight controller)
     {
         if (boresight != null)
@@ -36,10 +38,5 @@ public class MouseFlightHUD : MonoBehaviour
             mousePos.position = camera.WorldToScreenPoint(controller.MouseAimPos);
             mousePos.gameObject.SetActive(mousePos.position.z > 1f);
         }
-    }
-
-    public void SetReferenceMouseFlight(MouseFlight controller)
-    {
-        mouseFlight = controller;
     }
 }
